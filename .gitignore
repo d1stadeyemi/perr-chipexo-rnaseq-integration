@@ -1,0 +1,29 @@
+# --- data & results (never commit large sequencing data) ---------------------
+/data/
+/results/
+*.bam
+*.bam.bai
+*.bai
+*.fastq.gz
+*.fq.gz
+*.bw
+*.zip
+
+# --- Snakemake internals -----------------------------------------------------
+.snakemake/
+*.snakemake.log
+
+# --- conda / env builds ------------------------------------------------------
+.conda/
+.snakemake-conda/
+
+# --- editor / OS -------------------------------------------------------------
+.DS_Store
+*.swp
+__pycache__/
+*.pyc
+.Rhistory
+.RData
+
+# --- allow small example/test fixtures if you add them later -----------------
+!tests/**/*.bam

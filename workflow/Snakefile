@@ -1,0 +1,54 @@
+# =============================================================================
+# PerR ChIP-exo — reproducible analysis workflow (Group B Streptococcus)
+# Stage 1: unpack -> QC -> report   (peak calling / motif / integration to come)
+# =============================================================================
+# Usage (from the repo root, with the snakemake env active):
+#   snakemake --sdm conda --cores 8                        # local
+#   snakemake --workflow-profile profiles/isaac            # HPC (Slurm)
+# The only user input is config['input_zip'] in config/config.yaml.
+# =============================================================================
+
+from snakemake.utils import min_version
+
+min_version("8.0")
+
+
+include: "rules/common.smk"      # sample discovery from the zip manifest
+include: "rules/setup.smk"       # extraction
+include: "rules/qc.smk"          # samtools / fastqc / chipexoqual / deeptools
+include: "rules/report.smk"      # multiqc + scorecard
+
+
+# ----------------------------------------------------------------------------
+# Default target: everything needed to certify the delivery.
+# ----------------------------------------------------------------------------
+rule all:
+    input:
+        # provenance
+        expand(os.path.join(QC, "header_check", "{s}.header_check.tsv"),
+               s=SAMPLE_IDS),
+        # ChIP-exo QC (per sample)
+        expand(os.path.join(QC, "chipexoqual", "{s}", "{s}.metrics.tsv"),
+               s=SAMPLE_IDS),
+        # deepTools grouped QC (per strain)
+        expand(os.path.join(QC, "deeptools", "{strain}.fingerprint.pdf"),
+               strain=STRAINS),
+        expand(os.path.join(QC, "deeptools", "{strain}.spearman.pdf"),
+               strain=STRAINS),
+        expand(os.path.join(QC, "deeptools", "{strain}.fragsize.pdf"),
+               strain=STRAINS),
+        # aggregated reports
+        os.path.join(RESULTS, "02_report", "multiqc_report.html"),
+        os.path.join(RESULTS, "02_report", "qc_scorecard.tsv"),
+        os.path.join(RESULTS, "02_report", "qc_scorecard.md"),
+
+
+# Convenience sub-targets
+rule qc:
+    input:
+        rules.all.input,
+
+
+rule stage:
+    input:
+        all_raw_targets(),

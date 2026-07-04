@@ -1,0 +1,5 @@
+name: perr-deeptools
+channels: [conda-forge, bioconda]
+dependencies:
+  - deeptools=3.5.5
+  - samtools=1.21

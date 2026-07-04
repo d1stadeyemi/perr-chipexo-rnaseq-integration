@@ -1,0 +1,5 @@
+name: perr-base
+channels: [conda-forge, bioconda]
+dependencies:
+  - python=3.12
+  - pip

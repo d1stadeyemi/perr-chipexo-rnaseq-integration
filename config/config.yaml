@@ -1,0 +1,78 @@
+# =============================================================================
+# PerR ChIP-exo workflow — configuration
+# =============================================================================
+# The ONLY thing a user must edit is `input_zip` (path to the sequencing-core
+# delivery). Everything else is auto-discovered from the archive's file names.
+# =============================================================================
+
+# Path to the exact .zip delivered by the sequencing core (CEGR / Cornell EGC).
+# May be absolute or relative to the directory you launch Snakemake from.
+input_zip: "data/844_LBurcham_UTenn.zip"
+
+# All results are written under this directory (created automatically).
+results_dir: "results"
+
+# -----------------------------------------------------------------------------
+# Strains present in this delivery.
+#   prefix   : leading token of the CEGR "sample" field (e.g. A9091 -> A909)
+#   accession: reference the CORE aligned to (read straight from your Report;
+#              this MUST match the BAM @SQ header — the workflow checks it)
+#   chrom_len: expected chromosome length in bp (optional; used for a soft
+#              header sanity-check only). Leave as null to skip that check.
+# A909  = serotype Ia,  NC_007432.1   (complete, 2,127,839 bp)
+# CJB111 = serotype V,  NZ_CP063198.2 (2021 closed assembly)
+# -----------------------------------------------------------------------------
+strains:
+  A909:
+    prefix: "A909"
+    accession: "NC_007432.1"
+    chrom_len: 2127839
+  CJB111:
+    prefix: "CJB111"
+    accession: "NZ_CP063198.2"
+    chrom_len: null          # set once confirmed from the header, if desired
+
+# -----------------------------------------------------------------------------
+# How to read the CEGR file-name convention:
+#   {coreID}_{tag}_{antibody}_{sample}_-_-_-_{assay}_{suffix}
+#   e.g. 43893_6xHis_ab9108_A9091_-_-_-_BX_FilteredBAM.bam
+#   tag == "6xHis" -> IP ; tag == "NoTag" -> background control
+#   sample trailing "C" -> control ; trailing digit -> replicate number
+# These tokens are what the parser keys on; change only if the core changes
+# their naming scheme.
+# -----------------------------------------------------------------------------
+naming:
+  ip_tag: "6xHis"
+  control_tag: "NoTag"
+  bam_suffix: "_FilteredBAM.bam"
+  r1_suffix: "_R1.fastq.gz"
+  r2_suffix: "_R2.fastq.gz"
+  fwd_bw_suffix: "_forward.bw"
+  rev_bw_suffix: "_reverse.bw"
+
+# -----------------------------------------------------------------------------
+# QC parameters / thresholds.
+# Thresholds are reported as advisory flags, not hard failures, because
+# ChIP-exo intentionally violates several ChIP-seq QC conventions (e.g. it is
+# expected to be highly duplicated at footprint borders; Carroll et al. 2014).
+# -----------------------------------------------------------------------------
+qc:
+  fastqc_kmers: 7
+  # deepTools fingerprint / correlation
+  deeptools_binsize: 500
+  deeptools_extra: ""            # e.g. "--minMappingQuality 30"
+  # ChIPexoQual subsampling depth (islands); NULL = use all reads
+  chipexoqual_mc_cores: 4
+  # Advisory thresholds for the scorecard (see docs/QC_METRICS.md)
+  min_uniquely_mapped: 2000000   # ENCODE/modENCODE point-source floor
+  fsr_balanced_low: 0.4          # forward-strand ratio "balanced" window
+  fsr_balanced_high: 0.6
+
+# -----------------------------------------------------------------------------
+# Optional: reference download (NOT required for the QC stage).
+# Only needed by later stages (motif scanning, annotation). If your compute
+# nodes lack internet, run rule `get_references` on a login/transfer node.
+# -----------------------------------------------------------------------------
+reference:
+  download: false                # keep false for the QC-only run
+  ncbi_datasets: true            # use `datasets` CLI when download: true

@@ -1,0 +1,6 @@
+name: perr-chipexoqual
+channels: [conda-forge, bioconda]
+dependencies:
+  - bioconductor-chipexoqual=1.30.0
+  - bioconductor-genomicalignments
+  - r-base>=4.4

@@ -1,0 +1,4 @@
+name: perr-multiqc
+channels: [conda-forge, bioconda]
+dependencies:
+  - multiqc=1.25

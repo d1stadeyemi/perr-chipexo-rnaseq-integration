@@ -1,0 +1,66 @@
+# =============================================================================
+# Snakemake 9 workflow profile for ISAAC-NG (UTK) — SLURM executor plugin
+# =============================================================================
+# Launch with:  snakemake --workflow-profile profiles/isaac
+# Requires:  snakemake>=9, snakemake-executor-plugin-slurm, and --sdm conda
+#            (set below so you don't have to type it).
+#
+# EDIT the account / partition / qos to match YOUR allocation. 
+# For the general (non-condo) queue, use partition=campus (or short) and drop
+# the --qos line in slurm_extra.
+# =============================================================================
+
+executor: slurm
+software-deployment-method: conda      # === --sdm conda
+use-conda: true
+
+jobs: 20                                # max concurrent SLURM jobs
+latency-wait: 60
+retries: 1
+keep-going: true
+printshellcmds: true
+rerun-incomplete: true
+
+# --- resources applied to every rule unless overridden below -----------------
+default-resources:
+  slurm_account: "acf-utk0009"
+  slurm_partition: "condo-rmccord"
+  slurm_extra: "'--qos=condo'"
+  mem_mb: 8000
+  runtime: 120                         # minutes
+  cpus_per_task: 4
+
+# --- per-rule overrides (rule names must match those in the workflow) --------
+set-resources:
+  chipexoqual:
+    mem_mb: 16000
+    runtime: 180
+    cpus_per_task: 4
+  deeptools_fingerprint:
+    mem_mb: 16000
+    runtime: 240
+    cpus_per_task: 8
+  deeptools_multibamsummary:
+    mem_mb: 16000
+    runtime: 240
+    cpus_per_task: 8
+  deeptools_fragsize:
+    mem_mb: 12000
+    runtime: 180
+    cpus_per_task: 8
+  samtools_stats:
+    mem_mb: 8000
+    cpus_per_task: 4
+  stage_delivery:
+    # extraction is I/O-bound and single-threaded; give it time + local disk
+    mem_mb: 8000
+    runtime: 180
+    cpus_per_task: 1
+
+set-threads:
+  deeptools_fingerprint: 8
+  deeptools_multibamsummary: 8
+  deeptools_fragsize: 8
+  chipexoqual: 4
+  samtools_index: 4
+  samtools_stats: 4
