@@ -122,6 +122,12 @@ def raw_r1(sample):
 def raw_r2(sample):
     return os.path.join(RAW, SAMPLES[sample]["arc_r2"])
 
+def raw_bai(sample):
+    return raw_bam(sample) + ".bai"
+
+def bai_output(wildcards):
+    # not usable as output (functions disallowed there) — kept for INPUT refs
+    return raw_bam(wildcards.sample) + ".bai"
 
 # Constrain wildcards to the exact set of discovered sample ids so the
 # underscores/dashes in the names never cause ambiguous matches.

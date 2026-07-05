@@ -24,14 +24,13 @@ rule samtools_index:
         bam=lambda wc: raw_bam(wc.sample),
         flag=os.path.join(RAW, ".extracted"),
     output:
-        bai=os.path.join(RAW, "{sample}" + BAM_SUF + ".bai"),
+        bai=os.path.join(RAW, "844_LBurcham_UTenn", "{sample}" + BAM_SUF + ".bai"),
     log:
         os.path.join(LOG, "index_{sample}.log"),
     threads: 4
     conda:
         "../envs/samtools.yaml"
     shell:
-        # index the ORIGINAL bam in place next to it, then expose via output path
         "samtools index -@ {threads} {input.bam} {output.bai} 2> {log}"
 
 
@@ -39,7 +38,7 @@ rule check_bam_header:
     """Fail loudly if the @SQ genome build != the accession declared in config."""
     input:
         bam=lambda wc: raw_bam(wc.sample),
-        bai=os.path.join(RAW, "{sample}" + BAM_SUF + ".bai"),
+        bai=lambda wc: raw_bai(wc.sample),
     output:
         report=os.path.join(QC, "header_check", "{sample}.header_check.tsv"),
     params:
@@ -57,7 +56,7 @@ rule check_bam_header:
 rule samtools_flagstat:
     input:
         bam=lambda wc: raw_bam(wc.sample),
-        bai=os.path.join(RAW, "{sample}" + BAM_SUF + ".bai"),
+        bai=lambda wc: raw_bai(wc.sample),
     output:
         os.path.join(QC, "samtools", "{sample}.flagstat.txt"),
     threads: 4
@@ -70,7 +69,7 @@ rule samtools_flagstat:
 rule samtools_idxstats:
     input:
         bam=lambda wc: raw_bam(wc.sample),
-        bai=os.path.join(RAW, "{sample}" + BAM_SUF + ".bai"),
+        bai=lambda wc: raw_bai(wc.sample),
     output:
         os.path.join(QC, "samtools", "{sample}.idxstats.txt"),
     conda:
@@ -82,7 +81,7 @@ rule samtools_idxstats:
 rule samtools_stats:
     input:
         bam=lambda wc: raw_bam(wc.sample),
-        bai=os.path.join(RAW, "{sample}" + BAM_SUF + ".bai"),
+        bai=lambda wc: raw_bai(wc.sample),
     output:
         os.path.join(QC, "samtools", "{sample}.stats.txt"),
     threads: 4
@@ -130,7 +129,7 @@ rule fastqc:
 rule chipexoqual:
     input:
         bam=lambda wc: raw_bam(wc.sample),
-        bai=os.path.join(RAW, "{sample}" + BAM_SUF + ".bai"),
+        bai=lambda wc: raw_bai(wc.sample),
     output:
         arc_urc=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.ARCvURC.pdf"),
         fsr=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.FSRdist.pdf"),
@@ -162,7 +161,7 @@ def strain_bams(strain):
     return [raw_bam(s) for s in strain_ids(strain)]
 
 def strain_bais(strain):
-    return [os.path.join(RAW, s + BAM_SUF + ".bai") for s in strain_ids(strain)]
+    return [raw_bai(s) for s in strain_ids(strain)]
 
 def strain_labels(strain):
     labs = []

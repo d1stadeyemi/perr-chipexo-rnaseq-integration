@@ -8,6 +8,7 @@
 *.fq.gz
 *.bw
 *.zip
+*.log
 
 # --- Snakemake internals -----------------------------------------------------
 .snakemake/
