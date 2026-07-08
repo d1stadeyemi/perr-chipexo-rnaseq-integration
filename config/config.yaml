@@ -69,10 +69,27 @@ qc:
   fsr_balanced_high: 0.6
 
 # -----------------------------------------------------------------------------
-# Optional: reference download (NOT required for the QC stage).
-# Only needed by later stages (motif scanning, annotation). If your compute
-# nodes lack internet, run rule `get_references` on a login/transfer node.
+# Reference acquisition (needed by the PEAKS stage, not by QC).
+# Downloads genome FASTA + GFF3 per accession via the NCBI `datasets` CLI.
+# Compute nodes on many HPCs lack internet: run the reference rules on a
+# login/transfer node first, e.g.
+#   snakemake --sdm conda -c1 get_reference_all
+# then run peak calling on a compute/interactive node.
 # -----------------------------------------------------------------------------
 reference:
-  download: false                # keep false for the QC-only run
-  ncbi_datasets: true            # use `datasets` CLI when download: true
+  outdir: "resources/reference"
+
+# -----------------------------------------------------------------------------
+# Peak calling (ChExMix, primary caller).
+# ChExMix is the Pugh/Mahony ChIP-exo mixture model matching this data's
+# provenance; it is control-aware and reports per-event log2 fold vs the no-tag
+# control. We run it in event-calling mode (tag distributions + control);
+# motif-defined subtypes (--seq/--back) are handled in the dedicated motif
+# stage where we build the AT-rich GBS background explicitly.
+# -----------------------------------------------------------------------------
+peaks:
+  chexmix_mem_gb: 20             # java heap; ChExMix is memory-intensive
+  chexmix_threads: 8
+  chexmix_qvalue: 0.01           # event significance threshold
+  chexmix_extra: ""              # extra flags, e.g. "--mappability 0.95"
+  format: "SAM"                  # ChExMix reads BAM via the SAM loader

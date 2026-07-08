@@ -1,11 +1,13 @@
 # =============================================================================
-# Snakemake 9 workflow profile for ISAAC-NG (UTK) — SLURM executor plugin
+# Snakemake 8 workflow profile for ISAAC-NG (UTK) — SLURM executor plugin
 # =============================================================================
 # Launch with:  snakemake --workflow-profile profiles/isaac
-# Requires:  snakemake>=9, snakemake-executor-plugin-slurm, and --sdm conda
+# Requires:  snakemake>=8, snakemake-executor-plugin-slurm, and --sdm conda
 #            (set below so you don't have to type it).
 #
-# EDIT the account / partition / qos to match YOUR allocation. 
+# EDIT the account / partition / qos to match YOUR allocation. The values below
+# mirror the condo allocation seen in your shell history:
+#   account=acf-utk0009  partition=condo-rmccord  qos=condo
 # For the general (non-condo) queue, use partition=campus (or short) and drop
 # the --qos line in slurm_extra.
 # =============================================================================

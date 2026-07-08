@@ -123,11 +123,9 @@ def raw_r2(sample):
     return os.path.join(RAW, SAMPLES[sample]["arc_r2"])
 
 def raw_bai(sample):
+    # BAM index lives adjacent to the BAM (required by deepTools/ChExMix)
     return raw_bam(sample) + ".bai"
 
-def bai_output(wildcards):
-    # not usable as output (functions disallowed there) — kept for INPUT refs
-    return raw_bam(wildcards.sample) + ".bai"
 
 # Constrain wildcards to the exact set of discovered sample ids so the
 # underscores/dashes in the names never cause ambiguous matches.
@@ -142,3 +140,35 @@ def all_raw_targets():
     for s in SAMPLE_IDS:
         t += [raw_bam(s), raw_r1(s), raw_r2(s)]
     return t
+
+
+# =============================================================================
+# Helpers for the PEAKS stage
+# =============================================================================
+REF = config["reference"]["outdir"]
+PEAKS = os.path.join(RESULTS, "03_peaks")
+
+
+def strain_accession(strain):
+    """The single reference accession for a strain (asserts consistency)."""
+    accs = {SAMPLES[s]["accession"] for s in strain_ids(strain)}
+    assert len(accs) == 1, f"{strain} maps to multiple accessions: {accs}"
+    return accs.pop()
+
+
+def all_accessions():
+    return sorted({SAMPLES[s]["accession"] for s in SAMPLE_IDS})
+
+
+# reference file paths (per accession)
+def ref_fna(acc):
+    return os.path.join(REF, acc, f"{acc}.fna")
+
+def ref_gff(acc):
+    return os.path.join(REF, acc, f"{acc}.gff")
+
+def ref_geninfo(acc):
+    return os.path.join(REF, acc, f"{acc}.geninfo")
+
+def ref_seqdir(acc):
+    return os.path.join(REF, acc, "seq")

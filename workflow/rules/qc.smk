@@ -31,6 +31,7 @@ rule samtools_index:
     conda:
         "../envs/samtools.yaml"
     shell:
+        # index the ORIGINAL bam in place next to it, then expose via output path
         "samtools index -@ {threads} {input.bam} {output.bai} 2> {log}"
 
 

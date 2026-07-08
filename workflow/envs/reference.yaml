@@ -1,0 +1,6 @@
+name: perr-reference
+channels: [conda-forge, bioconda]
+dependencies:
+  - ncbi-datasets-cli
+  - unzip
+  - samtools=1.21

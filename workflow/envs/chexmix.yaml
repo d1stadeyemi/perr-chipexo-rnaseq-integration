@@ -1,0 +1,6 @@
+name: perr-chexmix
+channels: [conda-forge, bioconda]
+dependencies:
+  - chexmix=0.52
+  - openjdk>=8
+  - meme            # ChExMix invokes MEME for internal motif steps
