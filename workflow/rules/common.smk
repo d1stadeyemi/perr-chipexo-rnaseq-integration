@@ -156,19 +156,14 @@ def strain_accession(strain):
     return accs.pop()
 
 
-def all_accessions():
-    return sorted({SAMPLES[s]["accession"] for s in SAMPLE_IDS})
+def strain_assembly(strain):
+    return config["strains"][strain]["assembly"]
 
+def all_assemblies():
+    return sorted({v["assembly"] for v in config["strains"].values()})
 
-# reference file paths (per accession)
-def ref_fna(acc):
-    return os.path.join(REF, acc, f"{acc}.fna")
-
-def ref_gff(acc):
-    return os.path.join(REF, acc, f"{acc}.gff")
-
-def ref_geninfo(acc):
-    return os.path.join(REF, acc, f"{acc}.geninfo")
-
-def ref_seqdir(acc):
-    return os.path.join(REF, acc, "seq")
+# reference files are stored per ASSEMBLY accession
+def ref_fna(asm):     return os.path.join(REF, asm, f"{asm}.fna")
+def ref_gff(asm):     return os.path.join(REF, asm, f"{asm}.gff")
+def ref_geninfo(asm): return os.path.join(REF, asm, f"{asm}.geninfo")
+def ref_seqdir(asm):  return os.path.join(REF, asm, "seq")

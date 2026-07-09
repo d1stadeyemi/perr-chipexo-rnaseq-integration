@@ -90,7 +90,7 @@ for s in samples:
     fsr = fnum(cq.get("FSR_median"))
     beta1 = fnum(cq.get("beta1_median"))
     beta2 = fnum(cq.get("beta2_median"))
-    nreads = fnum(cq.get("n_reads"))
+    nreads = fnum(cq.get("n_reads_subsampled"))
 
     flags = []
     if hd["build_status"] != "PASS":

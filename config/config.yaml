@@ -25,12 +25,14 @@ results_dir: "results"
 strains:
   A909:
     prefix: "A909"
-    accession: "NC_007432.1"
+    accession: "NC_007432.1"        # sequence accession (BAM @SQ / header check)
+    assembly: "GCF_000012705.1"     # assembly accession (NCBI datasets download)
     chrom_len: 2127839
   CJB111:
     prefix: "CJB111"
     accession: "NZ_CP063198.2"
-    chrom_len: null          # set once confirmed from the header, if desired
+    assembly: "GCF_015221735.2"
+    chrom_len: 2093987
 
 # -----------------------------------------------------------------------------
 # How to read the CEGR file-name convention:
@@ -67,6 +69,13 @@ qc:
   min_uniquely_mapped: 2000000   # ENCODE/modENCODE point-source floor
   fsr_balanced_low: 0.4          # forward-strand ratio "balanced" window
   fsr_balanced_high: 0.6
+
+# ChIPexoQual: deep coverage on a ~2 Mb genome merges all reads into one
+  # island. Subsample to a FIXED read count so beta1/beta2 are comparable
+  # across samples of differing depth (measured: CJB111 full=1 island,
+  # 5%=311, 1%=7593).
+  chipexoqual_target_reads: 250000
+  chipexoqual_subsample_seed: 42
 
 # -----------------------------------------------------------------------------
 # Reference acquisition (needed by the PEAKS stage, not by QC).

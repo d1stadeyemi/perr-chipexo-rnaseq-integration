@@ -1,6 +1,8 @@
 # --- data & results (never commit large sequencing data) ---------------------
 /data/
 /results/
+/resources/
+/logs/
 *.bam
 *.bam.bai
 *.bai
@@ -9,6 +11,7 @@
 *.bw
 *.zip
 *.log
+*.sh
 
 # --- Snakemake internals -----------------------------------------------------
 .snakemake/

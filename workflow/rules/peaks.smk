@@ -43,7 +43,7 @@ rule chexmix:
     """Call PerR binding events for one strain with all IP reps + control."""
     input:
         bams=lambda wc: chexmix_input_bams(wc.strain),
-        geninfo=lambda wc: ref_geninfo(strain_accession(wc.strain)),
+        geninfo=lambda wc: ref_geninfo(strain_assembly(wc.strain)),
     output:
         events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
         done=touch(os.path.join(PEAKS, "{strain}", ".chexmix.done")),

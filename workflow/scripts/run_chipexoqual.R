@@ -1,27 +1,28 @@
 ## ============================================================================
-## run_chipexoqual.R — ChIP-exo QC for one BAM (small-genome safe, v2)
+## run_chipexoqual.R — ChIP-exo QC for one BAM (small-genome safe, v3)
 ## ============================================================================
-## Root cause of the earlier empty CJB111 panels:
-##   ChIPexoQual's ExoData() samples `nregions` islands WITHOUT replacement to
-##   fit the depth ~ uniquePos + width regression (beta1/beta2). On a ~2 Mb
-##   genome there can be fewer islands than the default nregions=1000, which
-##   throws "cannot take a sample larger than the population".
-##   `nregions` ONLY controls that regression subsample; island formation (and
-##   thus the ARC/URC, FSR, region-composition island stats) is independent.
+## Why this looks the way it does:
+##   On a ~2 Mb genome at full depth, every read overlaps its neighbour and the
+##   whole chromosome merges into ONE island (measured: CJB111 full = 1 island,
+##   5% = 311, 1% = 7593; A909 full = 648). ChIPexoQual cannot characterise a
+##   1-island library, which is why the CJB111 panels came out empty.
 ##
-## Fix vs v1:
-##   v1 built a capped second object and PLOTTED THAT. When the capped build
-##   degraded (CJB111), all three diagnostic plots emptied and beta2 -> None.
-##   v2 plots the three island-level diagnostics from `ex_full`, built with
-##   nregions=1 (can NEVER crash, still forms ALL islands). beta1/beta2 and the
-##   paramDist boxplot come from a SEPARATE best-effort capped build; if that
-##   fails, only the beta numbers degrade to NA — the diagnostic panels are
-##   always complete.
+##   Fix: reads are subsampled to a FIXED read count BEFORE this script runs
+##   (rule subsample_bam_for_qc). A fixed count — not a fixed fraction — keeps
+##   beta1/beta2 comparable across samples of differing depth.
+##
+##   Second trap: calculateParamDist() does `stats[sample(.N, nregions)]` with
+##   no internal guard, so nregions MUST be <= n_islands. ExoData(nregions=1L)
+##   never trips this and still forms ALL islands, so we use it for the object
+##   and compute the regression ourselves with a capped nregions.
+##   Model is lm(depth ~ 0 + uniquePos + width): beta1 = uniquePos coefficient,
+##   beta2 = width coefficient.
 ## ============================================================================
 
 suppressMessages({
   library(ChIPexoQual)
   library(GenomicAlignments)
+  library(data.table)
 })
 
 log <- file(snakemake@log[[1]], open = "wt")
@@ -39,7 +40,7 @@ out_rc    <- snakemake@output[["regioncomp"]]
 out_pd    <- snakemake@output[["paramdist"]]
 out_stats <- snakemake@output[["stats"]]
 
-message("ChIPexoQual on: ", bam)
+message("ChIPexoQual on (subsampled BAM): ", bam)
 
 save_plot <- function(expr, path, w = 6, h = 5) {
   pdf(path, width = w, height = h)
@@ -49,45 +50,50 @@ save_plot <- function(expr, path, w = 6, h = 5) {
   dev.off()
 }
 
-## ---- ex_full: guaranteed-complete object for the island-level diagnostics --
-## nregions=1 samples exactly 1 island for the (unused-here) regression, so it
-## can never exceed the population; ALL islands are still formed.
-ex_full <- ExoData(file = bam, mc.cores = mc_cores,
-                   nregions = 1L, ntimes = 1L, verbose = TRUE)
-n_islands <- length(ex_full)
-message("n_islands = ", n_islands)
+## ---- build ExoData (nregions=1L is always safe; keeps all islands) ----------
+ex <- ExoData(file = bam, mc.cores = mc_cores,
+              nregions = 1L, ntimes = 1L, verbose = TRUE)
+n_islands <- length(ex)
+message("islands: ", n_islands)
 
-save_plot(ARCvURCplot(ex_full,   names.input = sample_id), out_arc)
-save_plot(FSRDistplot(ex_full,   names.input = sample_id), out_fsr)
-save_plot(regionCompplot(ex_full, names.input = sample_id), out_rc)
+## ---- island-level diagnostic panels ----------------------------------------
+save_plot(ARCvURCplot(ex,    names.input = sample_id), out_arc)
+save_plot(FSRDistplot(ex,    names.input = sample_id), out_fsr)
+save_plot(regionCompplot(ex, names.input = sample_id), out_rc)
 
-## ---- ex_param: best-effort regression for beta1/beta2 + paramDist boxplot --
-nreg <- max(1L, min(1000L, n_islands))
-ntim <- 100L
-ex_param <- tryCatch(
-  ExoData(file = bam, mc.cores = mc_cores,
-          nregions = nreg, ntimes = ntim, verbose = FALSE),
-  error = function(e) { message("param pass failed: ", conditionMessage(e)); NULL }
-)
-
+## ---- beta1 / beta2 with nregions strictly <= n_islands ---------------------
 b1 <- b2 <- NA_real_
-if (!is.null(ex_param)) {
-  save_plot(paramDistBoxplot(ex_param, names.input = sample_id), out_pd)
-  b1 <- tryCatch(median(beta1(ex_param), na.rm = TRUE), error = function(e) NA_real_)
-  b2 <- tryCatch(median(beta2(ex_param), na.rm = TRUE), error = function(e) NA_real_)
-} else {
-  pdf(out_pd); plot.new()
-  title(main = "paramDist unavailable (regression pass failed)"); dev.off()
+if (n_islands >= 2L) {
+  DT   <- formatRegions(ex)
+  nreg <- min(1000L, n_islands)
+  message("regression nregions: ", nreg)
+  pd <- tryCatch(
+    rbindlist(lapply(seq_len(100L), calculateParamDist, stats = DT, nregions = nreg)),
+    error = function(e) { message("paramDist failed: ", conditionMessage(e)); NULL })
+  if (!is.null(pd)) {
+    b1 <- median(pd[term == "uniquePos", estimate], na.rm = TRUE)
+    b2 <- median(pd[term == "width",     estimate], na.rm = TRUE)
+    pdf(out_pd, width = 6, height = 5)
+    boxplot(pd[term == "uniquePos", estimate], pd[term == "width", estimate],
+            names = c("beta1", "beta2"), main = sample_id,
+            ylab = "coefficient estimate")
+    dev.off()
+  }
+}
+if (!file.exists(out_pd)) {
+  pdf(out_pd); plot.new(); title("paramDist unavailable (too few islands)"); dev.off()
 }
 
-fsr_median <- tryCatch(median(S4Vectors::mcols(ex_full)$FSR, na.rm = TRUE),
+## ---- summary metrics --------------------------------------------------------
+fsr_median <- tryCatch(median(S4Vectors::mcols(ex)$FSR, na.rm = TRUE),
                        error = function(e) NA_real_)
-nr <- tryCatch(nreads(ex_full), error = function(e)
-        tryCatch(sum(S4Vectors::mcols(ex_full)$depth), error = function(e2) NA_real_))
+nr <- tryCatch(nreads(ex), error = function(e)
+        tryCatch(sum(S4Vectors::mcols(ex)$depth), error = function(e2) NA_real_))
 
 stats <- data.frame(
   sample = sample_id, strain = strain, kind = kind,
-  n_reads = nr, beta1_median = b1, beta2_median = b2,
+  n_reads_subsampled = nr,
+  beta1_median = b1, beta2_median = b2,
   FSR_median = fsr_median, n_islands = n_islands,
   stringsAsFactors = FALSE
 )

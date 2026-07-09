@@ -127,10 +127,43 @@ rule fastqc:
 # ---------------------------------------------------------------------------
 # ChIPexoQual — the ChIP-exo-specific QC (per sample)
 # ---------------------------------------------------------------------------
-rule chipexoqual:
+
+rule subsample_bam_for_qc:
+    """Subsample to a fixed read count for ChIPexoQual island formation."""
     input:
         bam=lambda wc: raw_bam(wc.sample),
         bai=lambda wc: raw_bai(wc.sample),
+    output:
+        bam=os.path.join(QC, "subsampled", "{sample}.sub.bam"),
+        bai=os.path.join(QC, "subsampled", "{sample}.sub.bam.bai"),
+    params:
+        target=config["qc"]["chipexoqual_target_reads"],
+        seed=config["qc"]["chipexoqual_subsample_seed"],
+    log:
+        os.path.join(LOG, "subsample_{sample}.log"),
+    threads: 4
+    conda:
+        "../envs/samtools.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        total=$(samtools view -@ {threads} -c -F 0x904 {input.bam})
+        frac=$(awk -v t={params.target} -v n="$total" 'BEGIN{{f=t/n; print (f>=1)?1:f}}')
+        echo "total=$total target={params.target} frac=$frac" > {log}
+        if [ "$frac" = "1" ]; then
+            cp {input.bam} {output.bam}
+        else
+            samtools view -@ {threads} -b \
+                --subsample "$frac" --subsample-seed {params.seed} \
+                {input.bam} > {output.bam}
+        fi
+        samtools index -@ {threads} {output.bam}
+        """
+
+rule chipexoqual:
+    input:
+        bam=os.path.join(QC, "subsampled", "{sample}.sub.bam"),
+        bai=os.path.join(QC, "subsampled", "{sample}.sub.bam.bai"),
     output:
         arc_urc=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.ARCvURC.pdf"),
         fsr=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.FSRdist.pdf"),
@@ -270,6 +303,7 @@ rule deeptools_fragsize:
         r"""
         bamPEFragmentSize -b {input.bams} --samplesLabel {params.labels} \
             --numberOfProcessors {threads} \
+            --maxFragmentLength 500 \
             --histogram {output.plot} \
             --outRawFragmentLengths {output.table} > {log} 2>&1
         """
