@@ -83,7 +83,6 @@ rule chexmix:
         cp "$ev" {output.events}
         """
 
-
 rule peaks:
     """Aggregate target: call peaks for every strain."""
     input:
