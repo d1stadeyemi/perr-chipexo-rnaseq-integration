@@ -97,8 +97,9 @@ reference:
 # stage where we build the AT-rich GBS background explicitly.
 # -----------------------------------------------------------------------------
 peaks:
+  chexmix_mappability: 0.98      # bacterial genome, unique mapping (default 0.8 is human)
   chexmix_mem_gb: 20             # java heap; ChExMix is memory-intensive
   chexmix_threads: 8
   chexmix_qvalue: 0.01           # event significance threshold
   chexmix_extra: ""              # extra flags, e.g. "--mappability 0.95"
-  format: "SAM"                  # ChExMix reads BAM via the SAM loader
+  format: "BAM"                  # ChExMix reads BAM via the SAM loader
