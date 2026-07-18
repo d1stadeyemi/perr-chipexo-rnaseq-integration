@@ -76,6 +76,7 @@ qc:
   # 5%=311, 1%=7593).
   chipexoqual_target_reads: 250000
   chipexoqual_subsample_seed: 42
+  chipexoqual_ladder_depths: [100000, 250000, 500000]
 
 # -----------------------------------------------------------------------------
 # Reference acquisition (needed by the PEAKS stage, not by QC).
@@ -103,3 +104,16 @@ peaks:
   chexmix_qvalue: 0.01           # event significance threshold
   chexmix_extra: ""              # extra flags, e.g. "--mappability 0.95"
   format: "BAM"                  # ChExMix reads BAM via the SAM loader
+  chexmix_minfold: 1.5            # min fold over scaled control (default)
+  chexmix_exclude: ""            # optional artifact-region BED (rRNA/tRNA); empty = off
+
+# -----------------------------------------------------------------------------
+# Depth-matched (symmetric) ChExMix control.
+# All IP replicates from BOTH strains are subsampled to a single common read
+# count (the minimum across the six IPs); controls likewise. This isolates the
+# DEPTH component of the A909-vs-CJB111 event-count gap. It cannot equalise
+# SignalFraction (0.185 vs 0.102) - that is the IP-efficiency difference itself.
+# Results go to results/04_downsample/, leaving results/03_peaks/ untouched.
+# -----------------------------------------------------------------------------
+downsample:
+  seed: 42

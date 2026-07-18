@@ -88,8 +88,8 @@ for s in samples:
             return None
 
     fsr = fnum(cq.get("FSR_median"))
-    beta1 = fnum(cq.get("beta1_median"))
-    beta2 = fnum(cq.get("beta2_median"))
+    beta1 = fnum(cq.get("beta1_enrichment"))
+    beta2 = fnum(cq.get("beta2_complexity"))
     nreads = fnum(cq.get("n_reads_subsampled"))
 
     flags = []

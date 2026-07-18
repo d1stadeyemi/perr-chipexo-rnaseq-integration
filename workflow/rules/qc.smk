@@ -164,17 +164,21 @@ rule chipexoqual:
     input:
         bam=os.path.join(QC, "subsampled", "{sample}.sub.bam"),
         bai=os.path.join(QC, "subsampled", "{sample}.sub.bam.bai"),
+        full_bam=lambda wc: raw_bam(wc.sample),
+        full_bai=lambda wc: raw_bai(wc.sample),
     output:
         arc_urc=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.ARCvURC.pdf"),
         fsr=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.FSRdist.pdf"),
         regioncomp=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.regionComp.pdf"),
         paramdist=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.paramDist.pdf"),
+        ladder=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.depthLadder.pdf"),
         stats=os.path.join(QC, "chipexoqual", "{sample}", "{sample}.metrics.tsv"),
     params:
         sample_id=lambda wc: wc.sample,
         kind=lambda wc: SAMPLES[wc.sample]["kind"],
         strain=lambda wc: SAMPLES[wc.sample]["strain"],
         mc_cores=config["qc"]["chipexoqual_mc_cores"],
+        ladder_depths=config["qc"]["chipexoqual_ladder_depths"],
     log:
         os.path.join(LOG, "chipexoqual_{sample}.log"),
     threads: 4
