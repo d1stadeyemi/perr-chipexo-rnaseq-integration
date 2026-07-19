@@ -72,10 +72,12 @@ n_islands <- length(ex0)
 message("islands (subsampled bam): ", n_islands)
 
 nreg <- min(1000L, max(2L, n_islands))
-ex <- if (n_islands >= 2L)
-        ExoData(file = bam, mc.cores = mc_cores,
-                nregions = nreg, ntimes = 100L, verbose = TRUE)
-      else ex0
+ex <- if (n_islands >= 2L) {
+  ExoData(file = bam, mc.cores = mc_cores,
+          nregions = nreg, ntimes = 100L, verbose = TRUE)
+} else {
+  ex0
+}
 
 ## ---- island-level diagnostic panels ----------------------------------------
 save_plot(ARCvURCplot(ex,     names.input = sample_id), out_arc)
@@ -106,7 +108,7 @@ if (!is.null(pd_tab) && all(c("beta1", "beta2") %in% colnames(pd_tab))) {
 ladder_ok <- FALSE
 el <- tryCatch(
   ExoDataSubsampling(file = full_bam, sample.depth = sort(ladder),
-                     nregions = 500L, ntimes = 100L,
+                     nregions = 200L, ntimes = 100L,
                      mc.cores = mc_cores, verbose = FALSE),
   error = function(e) { message("ladder failed: ", conditionMessage(e)); NULL }
 )

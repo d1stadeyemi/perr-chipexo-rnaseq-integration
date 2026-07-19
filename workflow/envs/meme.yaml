@@ -1,0 +1,6 @@
+name: perr-meme
+channels: [conda-forge, bioconda]
+dependencies:
+  - meme=5.5.9
+  - bedtools=2.31.1
+  - python=3.12

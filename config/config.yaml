@@ -76,7 +76,7 @@ qc:
   # 5%=311, 1%=7593).
   chipexoqual_target_reads: 250000
   chipexoqual_subsample_seed: 42
-  chipexoqual_ladder_depths: [100000, 250000, 500000]
+  chipexoqual_ladder_depths: [50000, 100000, 200000]
 
 # -----------------------------------------------------------------------------
 # Reference acquisition (needed by the PEAKS stage, not by QC).
@@ -99,7 +99,7 @@ reference:
 # -----------------------------------------------------------------------------
 peaks:
   chexmix_mappability: 0.98      # bacterial genome, unique mapping (default 0.8 is human)
-  chexmix_mem_gb: 20             # java heap; ChExMix is memory-intensive
+  chexmix_mem_gb: 24             # java heap; ChExMix is memory-intensive
   chexmix_threads: 8
   chexmix_qvalue: 0.01           # event significance threshold
   chexmix_extra: ""              # extra flags, e.g. "--mappability 0.95"
@@ -117,3 +117,21 @@ peaks:
 # -----------------------------------------------------------------------------
 downsample:
   seed: 42
+
+# -----------------------------------------------------------------------------
+# Motif discovery, GAS-Per-box comparison, and peak classification.
+# MEME-ChIP does UNBIASED de novo discovery under the PerR peaks; the GAS Per
+# box (group A Strep; NO GBS-specific box exists — part of the novelty) is used
+# only as a REFERENCE (TOMTOM similarity + FIMO occurrence), never to drive
+# discovery.
+# -----------------------------------------------------------------------------
+motif:
+  gas_perbox: "TTANAATNATTNTAA"   # GAS Per box consensus (reference only)
+  bg_order: 1                     # fasta-get-markov Markov order (AT-rich genome)
+  window: 200                     # bp window centered on each ChExMix event Point
+  meme_mod: "zoops"               # zero-or-one occurrence per sequence
+  meme_minw: 6                    # brackets the 15 bp Per box
+  meme_maxw: 20
+  memechip_extra: ""              # extra meme-chip flags if needed
+  tomtom_thresh: 0.1              # TOMTOM E-value threshold
+  fimo_thresh: 0.0001             # FIMO p-value threshold (default 1e-4)

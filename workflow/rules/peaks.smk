@@ -104,7 +104,7 @@ rule chexmix:
             --out {params.outdir}/{params.outname} \
             {params.extra} > {log} 2>&1
 
-        # ChExMix writes into {outdir}/{name}/ with files prefixed {name}_{name}.
+        # ChExMix writes into {{outdir}}/{{name}}/ with files prefixed {{name}}_{{name}}.
         base="{params.outdir}/{params.outname}/{params.outname}_{params.outname}"
 
         # events (required)
