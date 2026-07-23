@@ -20,6 +20,7 @@ include: "rules/report.smk"      # multiqc + scorecard
 include: "rules/reference.smk"   # genome download + geninfo/seq prep (PEAKS)
 include: "rules/peaks.smk"       # ChExMix peak calling (PEAKS)
 include: "rules/motif.smk"       # MEME-ChIP / TOMTOM / FIMO + classification
+include: "rules/integration.smk"  # assign peaks to genes, integrate with RNA-seq
 
 
 # ----------------------------------------------------------------------------

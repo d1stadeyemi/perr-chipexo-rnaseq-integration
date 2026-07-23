@@ -136,3 +136,23 @@ motif:
   memechip_extra: ""              # extra meme-chip flags if needed
   tomtom_thresh: 0.1              # TOMTOM E-value threshold
   fimo_thresh: 0.0001             # FIMO p-value threshold (default 1e-4)
+
+# -----------------------------------------------------------------------------
+# ChIP-exo x RNA-seq integration.
+# Uses the RAW output sheets (all genes + stats), not the pre-filtered DEG
+# sheets, so genes that are BOUND BUT NOT DIFFERENTIALLY EXPRESSED remain
+# visible. The DEG sheets are read only to cross-check our thresholds.
+# -----------------------------------------------------------------------------
+integration:
+  deg_excel: "data/DEG_supplementary.xlsx"   # <-- point at your workbook
+  sheets:
+    A909:
+      raw:  "A909 raw output"
+      degs: "A909 DEGs"
+    CJB111:
+      raw:  "CJB111 raw output"
+      degs: "CJB111 DEGs"
+  max_upstream: 300        # bp: peak within this distance 5' of a TSS = promoter
+  operon_max_gap: 50       # bp: same-strand gap treated as co-transcribed
+  deg_padj: 0.01
+  deg_log2fc: 1.5
