@@ -19,6 +19,14 @@
 
 MOTIF = os.path.join(RESULTS, "05_motif")
 
+# Peak sets analysed in parallel:
+#   all    = every ChExMix binding event
+#   hiconf = events reproducible across >= motif.hiconf_min_reps replicates
+PEAKSETS = ["all", "hiconf"]
+
+wildcard_constraints:
+    peakset="all|hiconf",
+
 
 # ---------------------------------------------------------------------------
 # 1. AT-rich background model (per assembly), reused everywhere
@@ -70,15 +78,18 @@ rule perbox_motif:
 rule events_to_bed:
     input:
         events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
+        repcodes=os.path.join(PEAKS, "{strain}", "{strain}.replicationcodes.table"),
         fai=lambda wc: os.path.join(
             REF, strain_assembly(wc.strain),
             f"{strain_assembly(wc.strain)}.fna.fai"),
     output:
-        bed=os.path.join(MOTIF, "{strain}", "{strain}.windows.bed"),
+        bed=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.windows.bed"),
     params:
         half=lambda wc: config["motif"]["window"] // 2,
+        peakset=lambda wc: wc.peakset,
+        min_reps=config["motif"]["hiconf_min_reps"],
     log:
-        os.path.join(RESULTS, "logs", "events_to_bed_{strain}.log"),
+        os.path.join(RESULTS, "logs", "events_to_bed_{strain}_{peakset}.log"),
     conda:
         "../envs/meme.yaml"
     script:
@@ -91,14 +102,14 @@ rule events_to_bed:
 # ---------------------------------------------------------------------------
 rule extract_peak_fasta:
     input:
-        bed=os.path.join(MOTIF, "{strain}", "{strain}.windows.bed"),
+        bed=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.windows.bed"),
         fna=lambda wc: os.path.join(
             REF, strain_assembly(wc.strain),
             f"{strain_assembly(wc.strain)}.fna"),
     output:
-        fa=os.path.join(MOTIF, "{strain}", "{strain}.peaks.fa"),
+        fa=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.peaks.fa"),
     log:
-        os.path.join(RESULTS, "logs", "extract_fasta_{strain}.log"),
+        os.path.join(RESULTS, "logs", "extract_fasta_{strain}_{peakset}.log"),
     conda:
         "../envs/meme.yaml"
     shell:
@@ -113,22 +124,22 @@ rule extract_peak_fasta:
 # ---------------------------------------------------------------------------
 rule meme_chip:
     input:
-        fa=os.path.join(MOTIF, "{strain}", "{strain}.peaks.fa"),
+        fa=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.peaks.fa"),
         bg=lambda wc: os.path.join(
             MOTIF, "background",
             f"{strain_assembly(wc.strain)}.m{config['motif']['bg_order']}.bg"),
         perbox=os.path.join(MOTIF, "{strain}", "GAS_perbox.reference.meme"),
     output:
-        html=os.path.join(MOTIF, "{strain}", "memechip", "meme-chip.html"),
-        done=touch(os.path.join(MOTIF, "{strain}", ".memechip.done")),
+        html=os.path.join(MOTIF, "{strain}", "memechip_{peakset}", "meme-chip.html"),
+        done=touch(os.path.join(MOTIF, "{strain}", ".memechip_{peakset}.done")),
     params:
-        outdir=os.path.join(MOTIF, "{strain}", "memechip"),
+        outdir=os.path.join(MOTIF, "{strain}", "memechip_{peakset}"),
         minw=config["motif"]["meme_minw"],
         maxw=config["motif"]["meme_maxw"],
         mod=config["motif"]["meme_mod"],
         extra=config["motif"].get("memechip_extra", ""),
     log:
-        os.path.join(RESULTS, "logs", "memechip_{strain}.log"),
+        os.path.join(RESULTS, "logs", "memechip_{strain}_{peakset}.log"),
     threads: 4
     resources:
         mem_mb=8000,
@@ -142,7 +153,7 @@ rule meme_chip:
             -db {input.perbox} \
             -bfile {input.bg} \
             -meme-mod {params.mod} \
-            -meme-minw {params.minw} -meme-maxw {params.maxw} \
+            -minw {params.minw} -maxw {params.maxw} \
             -dna -meme-p {threads} \
             {params.extra} \
             {input.fa} > {log} 2>&1
@@ -156,16 +167,16 @@ rule meme_chip:
 # ---------------------------------------------------------------------------
 rule tomtom_perbox:
     input:
-        memechip_done=os.path.join(MOTIF, "{strain}", ".memechip.done"),
+        memechip_done=os.path.join(MOTIF, "{strain}", ".memechip_{peakset}.done"),
         perbox=os.path.join(MOTIF, "{strain}", "GAS_perbox.reference.meme"),
     output:
-        tsv=os.path.join(MOTIF, "{strain}", "tomtom", "tomtom.tsv"),
+        tsv=os.path.join(MOTIF, "{strain}", "tomtom_{peakset}", "tomtom.tsv"),
     params:
-        memechip_dir=os.path.join(MOTIF, "{strain}", "memechip"),
-        outdir=os.path.join(MOTIF, "{strain}", "tomtom"),
+        memechip_dir=os.path.join(MOTIF, "{strain}", "memechip_{peakset}"),
+        outdir=os.path.join(MOTIF, "{strain}", "tomtom_{peakset}"),
         thresh=config["motif"]["tomtom_thresh"],
     log:
-        os.path.join(RESULTS, "logs", "tomtom_{strain}.log"),
+        os.path.join(RESULTS, "logs", "tomtom_{strain}_{peakset}.log"),
     conda:
         "../envs/meme.yaml"
     shell:
@@ -219,13 +230,13 @@ rule fimo_scan:
 # ---------------------------------------------------------------------------
 rule classify_peaks:
     input:
-        windows=os.path.join(MOTIF, "{strain}", "{strain}.windows.bed"),
+        windows=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.windows.bed"),
         events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
         fimo=os.path.join(MOTIF, "{strain}", "fimo", "fimo.tsv"),
     output:
-        tsv=os.path.join(MOTIF, "{strain}", "{strain}.peak_classification.tsv"),
+        tsv=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.peak_classification.tsv"),
     log:
-        os.path.join(RESULTS, "logs", "classify_{strain}.log"),
+        os.path.join(RESULTS, "logs", "classify_{strain}_{peakset}.log"),
     conda:
         "../envs/meme.yaml"
     script:
@@ -233,8 +244,11 @@ rule classify_peaks:
 
 
 rule motif:
-    """Aggregate target: full motif analysis for every strain."""
+    """Aggregate target: motif analysis for every strain x peak set."""
     input:
-        expand(os.path.join(MOTIF, "{strain}", "memechip", "meme-chip.html"), strain=STRAINS),
-        expand(os.path.join(MOTIF, "{strain}", "tomtom", "tomtom.tsv"), strain=STRAINS),
-        expand(os.path.join(MOTIF, "{strain}", "{strain}.peak_classification.tsv"), strain=STRAINS),
+        expand(os.path.join(MOTIF, "{strain}", "memechip_{peakset}", "meme-chip.html"),
+               strain=STRAINS, peakset=PEAKSETS),
+        expand(os.path.join(MOTIF, "{strain}", "tomtom_{peakset}", "tomtom.tsv"),
+               strain=STRAINS, peakset=PEAKSETS),
+        expand(os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.peak_classification.tsv"),
+               strain=STRAINS, peakset=PEAKSETS),

@@ -99,7 +99,7 @@ reference:
 # -----------------------------------------------------------------------------
 peaks:
   chexmix_mappability: 0.98      # bacterial genome, unique mapping (default 0.8 is human)
-  chexmix_mem_gb: 24             # java heap; ChExMix is memory-intensive
+  chexmix_mem_gb: 48             # java heap; ChExMix is memory-intensive
   chexmix_threads: 8
   chexmix_qvalue: 0.01           # event significance threshold
   chexmix_extra: ""              # extra flags, e.g. "--mappability 0.95"
@@ -128,7 +128,8 @@ downsample:
 motif:
   gas_perbox: "TTANAATNATTNTAA"   # GAS Per box consensus (reference only)
   bg_order: 1                     # fasta-get-markov Markov order (AT-rich genome)
-  window: 200                     # bp window centered on each ChExMix event Point
+  window: 500                     # bp window centered on each ChExMix event Point
+  hiconf_min_reps: 3              # "hiconf" set = called in >= N replicates
   meme_mod: "zoops"               # zero-or-one occurrence per sequence
   meme_minw: 6                    # brackets the 15 bp Per box
   meme_maxw: 20

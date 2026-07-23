@@ -86,8 +86,8 @@ save_plot(regionCompplot(ex,  names.input = sample_id), out_rc)
 
 ## ---- beta1 / beta2 via the documented public accessors ---------------------
 ## beta1 = ENRICHMENT ; beta2 = LIBRARY COMPLEXITY
-b1 <- tryCatch(beta1(ex), error = function(e) NA_real_)
-b2 <- tryCatch(beta2(ex), error = function(e) NA_real_)
+b1 <- tryCatch(median(beta1(ex), na.rm = TRUE), error = function(e) NA_real_)
+b2 <- tryCatch(median(beta2(ex), na.rm = TRUE), error = function(e) NA_real_)
 
 pd_tab <- tryCatch(paramDist(ex), error = function(e) NULL)
 if (!is.null(pd_tab) && all(c("beta1", "beta2") %in% colnames(pd_tab))) {
