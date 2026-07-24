@@ -4,3 +4,5 @@ dependencies:
   - ncbi-datasets-cli
   - unzip
   - samtools=1.21
+  - curl
+  - tar

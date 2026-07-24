@@ -46,3 +46,25 @@ rule figures:
     input:
         os.path.join(FIGS, "regulon_composition.pdf"),
         os.path.join(FIGS, "regulon_gene_counts.tsv"),
+        os.path.join(FIGS, "orthology_fig1_conservation.pdf"),
+        os.path.join(FIGS, "orthology_fig2_core_concordance.pdf"),
+
+
+rule orthology_figures:
+    """Cross-serotype conservation figures (1 row x 2 panels each)."""
+    input:
+        crossstrain=os.path.join(ORTH, "crossstrain_regulon.tsv"),
+        summary=os.path.join(ORTH, "crossstrain_summary.tsv"),
+    output:
+        fig1=os.path.join(FIGS, "orthology_fig1_conservation.pdf"),
+        fig2=os.path.join(FIGS, "orthology_fig2_core_concordance.pdf"),
+    params:
+        strain_a=STRAIN_A,
+        strain_b=STRAIN_B,
+        outdir=FIGS,
+    log:
+        os.path.join(RESULTS, "logs", "orthology_figures.log"),
+    conda:
+        "../envs/figures.yaml"
+    script:
+        "../scripts/plot_orthology.R"

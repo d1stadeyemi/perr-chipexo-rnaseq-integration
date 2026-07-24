@@ -164,3 +164,21 @@ orthology:
   evalue: 1e-5
   min_identity: 30      # % identity floor for a hit to count
   min_coverage: 50      # % of query length aligned
+
+# -----------------------------------------------------------------------------
+# Curated motif-database comparison (valid TOMTOM statistics).
+# The earlier one-motif target database produced unusable p-values; the MEME
+# Suite PROKARYOTE collections (CollecTF, PRODORIC, RegTransBase) provide a
+# properly sized null.
+# -----------------------------------------------------------------------------
+motifdb:
+  url: "https://meme-suite.org/meme/meme-software/Databases/motifs/motif_databases.12.26.tgz"
+  # MEME "Combined Prokaryotes" = 558 motifs. Filenames are release-specific;
+  # check resources/motif_databases/PROKARYOTE/ after download if the run fails.
+  # fan2020.meme is deliberately omitted (Pseudomonas syringae HT-SELEX only).
+  databases:
+    - "prodoric_2021.9.meme"   # 333 motifs, w 5-34
+    - "regtransbase.meme"      # 141 motifs, w 14-38
+    - "collectf.meme"          #  84 motifs, w 9-53
+  thresh: 0.5          # report matches up to this q-value (permissive; filter later)
+  dist: "pearson"      # column comparison metric

@@ -8,3 +8,4 @@ dependencies:
   - r-tidyr
   - r-patchwork
   - r-ggrepel
+  - r-forcats
