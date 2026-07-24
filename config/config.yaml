@@ -154,5 +154,13 @@ integration:
       degs: "CJB111 DEGs"
   max_upstream: 300        # bp: peak within this distance 5' of a TSS = promoter
   operon_max_gap: 50       # bp: same-strand gap treated as co-transcribed
-  deg_padj: 0.01
-  deg_log2fc: 1.5
+  deg_padj: 0.05
+  deg_log2fc: 1
+
+# -----------------------------------------------------------------------------
+# Cross-serotype orthology (reciprocal best hits between the two proteomes).
+# -----------------------------------------------------------------------------
+orthology:
+  evalue: 1e-5
+  min_identity: 30      # % identity floor for a hit to count
+  min_coverage: 50      # % of query length aligned

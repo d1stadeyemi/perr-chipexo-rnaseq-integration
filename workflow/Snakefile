@@ -19,8 +19,11 @@ include: "rules/qc.smk"          # samtools / fastqc / chipexoqual / deeptools
 include: "rules/report.smk"      # multiqc + scorecard
 include: "rules/reference.smk"   # genome download + geninfo/seq prep (PEAKS)
 include: "rules/peaks.smk"       # ChExMix peak calling (PEAKS)
+include: "rules/downsample.smk"  # downsample BAMs for depth-matched comparison (PEAKS)
 include: "rules/motif.smk"       # MEME-ChIP / TOMTOM / FIMO + classification
 include: "rules/integration.smk"  # assign peaks to genes, integrate with RNA-seq
+include: "rules/figures.smk"     # figures for the direct regulon
+include: "rules/orthology.smk"   # cross-strain orthologs and regulon comparison
 
 
 # ----------------------------------------------------------------------------
