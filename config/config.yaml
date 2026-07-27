@@ -156,6 +156,7 @@ integration:
   operon_max_gap: 50       # bp: same-strand gap treated as co-transcribed
   deg_padj: 0.05
   deg_log2fc: 1
+  perbox_source: "gas"     # gas | gbs -- which Per box drives DIRECT_PERBOX
 
 # -----------------------------------------------------------------------------
 # Cross-serotype orthology (reciprocal best hits between the two proteomes).

@@ -111,6 +111,20 @@ def is_de(c):
     the gene is bound. BOUND_NOT_DE and BOUND_NO_RNA are deliberately excluded."""
     return c in ("DIRECT", "DIRECT_PERBOX", "INDIRECT")
 
+NONCODING = {"rRNA", "tRNA", "ncRNA", "tmRNA", "RNase_P_RNA", "SRP_RNA",
+             "antisense_RNA", "riboswitch", "misc_RNA"}
+
+
+def noorth_label(strain, rec):
+    """A gene with no CDS has no protein in the .faa, so a reciprocal best hit
+    is STRUCTURALLY IMPOSSIBLE regardless of how conserved the locus is.
+    Labelling those 'no orthologue' alongside genuinely strain-specific genes
+    conflates an artifact of a protein-based method with an accessory-genome
+    signal. Split them."""
+    bt = get(rec, "gene_biotype")
+    if bt in NONCODING:
+        return f"NO_PROTEIN_{strain}"
+    return f"NO_ORTHOLOG_{strain}"
 
 def binding_call(ca, cb):
     """Binding conservation, computed WITHOUT reference to expression."""
@@ -198,7 +212,7 @@ for g, ra in sorted(A.items()):
     if not (is_bound(ca) or is_de(ca)):
         continue
     n_noorth_a += 1
-    cons = f"NO_ORTHOLOG_{sa}"
+    cons = noorth_label(sa, ra)
     bind = binding_call(ca, "")
     cons_counts[cons] = cons_counts.get(cons, 0) + 1
     pairs.append(row(g, "", ra, None, "", bind, cons))
@@ -210,7 +224,7 @@ for g, rb in sorted(B.items()):
     if not (is_bound(cb) or is_de(cb)):
         continue
     n_noorth_b += 1
-    cons = f"NO_ORTHOLOG_{sb}"
+    cons = noorth_label(sb, rb)
     bind = binding_call("", cb)
     cons_counts[cons] = cons_counts.get(cons, 0) + 1
     pairs.append(row("", g, None, rb, "", bind, cons))

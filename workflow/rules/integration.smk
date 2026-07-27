@@ -62,15 +62,26 @@ rule assign_peaks:
 
 
 rule regulon_table:
-    """Join binding with expression -> the direct regulon table."""
+    """Join binding with expression -> the regulon table.
+
+    NOTE ON THE FILE NAME: `direct_regulon.tsv` is a misnomer inherited from
+    v1. The table is the UNION of bound genes and differentially expressed
+    genes -- it necessarily contains BOUND_NOT_DE and INDIRECT rows, which are
+    not part of any direct regulon. The direct regulon is the DIRECT /
+    DIRECT_PERBOX subset. Renaming the output is deferred so the change lands
+    in one place rather than rippling mid-analysis; do it before repo handoff
+    and update orthology.smk + figures.smk together."""
     input:
         assign=os.path.join(INTEG, "{strain}", "{strain}.peak_gene_assignments.tsv"),
         deg=os.path.join(INTEG, "{strain}", "{strain}.rnaseq.tsv"),
+        gff=lambda wc: os.path.join(
+            REF, strain_assembly(wc.strain), f"{strain_assembly(wc.strain)}.gff"),
     output:
         tsv=os.path.join(INTEG, "{strain}", "{strain}.direct_regulon.tsv"),
         summary=os.path.join(INTEG, "{strain}", "{strain}.regulon_summary.tsv"),
     params:
         strain=lambda wc: wc.strain,
+        perbox_source=config["integration"]["perbox_source"],
     log:
         os.path.join(RESULTS, "logs", "regulon_{strain}.log"),
     conda:

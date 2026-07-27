@@ -58,6 +58,8 @@ relab[paste0("DE_", sa, "_ONLY")] <- paste0("DE ", sa, " only")
 relab[paste0("DE_", sb, "_ONLY")] <- paste0("DE ", sb, " only")
 relab[paste0("NO_ORTHOLOG_", sa)] <- paste0("No orthologue (", sa, ")")
 relab[paste0("NO_ORTHOLOG_", sb)] <- paste0("No orthologue (", sb, ")")
+relab[paste0("NO_PROTEIN_", sa)] <- paste0("Non-coding (", sa, ")")
+relab[paste0("NO_PROTEIN_", sb)] <- paste0("Non-coding (", sb, ")")
 
 PAL <- c("Shared direct" = RUST, "Shared bound" = TEAL,
          "Shared indirect" = "#7FB3B1", "Divergent binding" = SAND,
@@ -68,6 +70,8 @@ PAL[paste0("DE ", sa, " only")]      <- GREY
 PAL[paste0("DE ", sb, " only")]      <- "#9AA7B1"
 PAL[paste0("No orthologue (", sa, ")")] <- "#5C6B7A"
 PAL[paste0("No orthologue (", sb, ")")] <- "#7D8B99"
+PAL[paste0("Non-coding (", sa, ")")] <- "#A9B4BD"
+PAL[paste0("Non-coding (", sb, ")")] <- "#C0C9D0"
 
 xs <- xs %>%
   mutate(cons_lab = ifelse(conservation %in% names(relab),
@@ -97,7 +101,17 @@ sc <- xs %>% filter(!is.na(.data[[fa]]), !is.na(.data[[fb]]))
 lab_sc <- sc %>% filter(conservation == "SHARED_DIRECT") %>%
   mutate(lab = ifelse(!is.na(gene_name) & nzchar(gene_name), gene_name,
                       .data[[paste0(sa, "_gene")]]))
-r <- if (nrow(sc) > 2) cor(sc[[fa]], sc[[fb]], use = "complete.obs") else NA_real_
+## perR itself sits at roughly (-10, -9.5) while every other point is inside
+## |log2FC| < 3.5. In a delta-perR background that value is the DELETION, not a
+## regulatory response, and a single point with that much leverage should not
+## set the reported correlation. Report the correlation WITHOUT it, plus
+## Spearman, which is rank-based and immune to the leverage point either way.
+perr_row <- grepl("^perR$", sc$gene_name, ignore.case = TRUE)
+sc_np <- sc[!perr_row, ]
+r_all  <- if (nrow(sc)    > 2) cor(sc[[fa]],    sc[[fb]],    use = "complete.obs") else NA_real_
+r      <- if (nrow(sc_np) > 2) cor(sc_np[[fa]], sc_np[[fb]], use = "complete.obs") else NA_real_
+rho    <- if (nrow(sc_np) > 2) cor(sc_np[[fa]], sc_np[[fb]],
+                                   method = "spearman", use = "complete.obs") else NA_real_
 
 p2 <- ggplot(sc, aes(.data[[fa]], .data[[fb]])) +
   geom_hline(yintercept = 0, colour = "#D8DEE3", linewidth = .4) +
@@ -112,7 +126,9 @@ p2 <- ggplot(sc, aes(.data[[fa]], .data[[fb]])) +
   scale_colour_manual(values = PAL) +
   scale_size_manual(values = c(`FALSE` = 1.3, `TRUE` = 2.8), guide = "none") +
   labs(title = "Expression response across serotypes",
-       subtitle = sprintf("Pearson r = %.2f; dashed line = identity", r),
+       subtitle = sprintf(
+         "Pearson r = %.3f, Spearman rho = %.3f (n = %d, perR excluded); dashed line = identity",
+         r, rho, nrow(sc_np)),
        x = paste0(sa, "  log2 fold change"),
        y = paste0(sb, "  log2 fold change")) +
   theme_perr() +
@@ -231,11 +247,17 @@ ggsave(file.path(outdir, "orthology_fig2_core_concordance.png"), fig2,
 
 writeLines(sprintf("rows total: %d", nrow(xs)), lg)
 writeLines(sprintf("1:1 orthologue pairs: %d",
-                   sum(!grepl("^NO_ORTHOLOG", xs$conservation))), lg)
+                   sum(!grepl("^NO_(ORTHOLOG|PROTEIN)", xs$conservation))), lg)
 writeLines(sprintf("shared direct: %d", nrow(core)), lg)
-writeLines(sprintf("cross-strain log2FC correlation: %.3f", r), lg)
+writeLines(sprintf("cross-strain log2FC Pearson (all, incl perR): %.3f  n=%d",
+                   r_all, nrow(sc)), lg)
+writeLines(sprintf("cross-strain log2FC Pearson (perR excluded):  %.3f  n=%d",
+                   r, nrow(sc_np)), lg)
+writeLines(sprintf("cross-strain log2FC Spearman (perR excluded): %.3f", rho), lg)
 writeLines(sprintf("bound in both strains: %d",
                    sum(xs$binding == "BOUND_BOTH")), lg)
-writeLines(sprintf("no-orthologue rows: %d",
+writeLines(sprintf("no-orthologue rows (accessory genome): %d",
                    sum(grepl("^NO_ORTHOLOG", xs$conservation))), lg)
+writeLines(sprintf("non-coding rows (no protein, RBH impossible): %d",
+                   sum(grepl("^NO_PROTEIN", xs$conservation))), lg)
 close(lg)
