@@ -82,13 +82,21 @@ with open(repcodes) as fh:
         if len(f) >= 2 and f[1].strip() != "X":
             code[f[0].strip()] = f[1].strip()
 
+# Read by COLUMN NAME. v1 indexed f[5]/f[6] positionally, which silently
+# breaks the moment a column is inserted upstream.
 perbox = {}
 with open(classif) as fh:
-    hdr = fh.readline().rstrip("\n").split("\t")
+    chdr = fh.readline().rstrip("\n").split("\t")
+    ci = {c: i for i, c in enumerate(chdr)}
     for ln in fh:
         f = ln.rstrip("\n").split("\t")
-        if len(f) >= 7:
-            perbox[f[0]] = (f[5], f[6])       # (perbox_in_window, n_hits)
+
+        def cv(key):
+            i = ci.get(key)
+            return f[i] if (i is not None and i < len(f)) else ""
+
+        perbox[f[0]] = (cv("perbox_in_window"), cv("n_perbox_hits"),
+                        cv("gbs_perbox_in_window"), cv("n_gbs_perbox_hits"))
 
 peaks = []
 with open(events) as fh:
@@ -147,18 +155,23 @@ for pk in peaks:
             cur = nxt
     if hits:
         n_assigned += 1
-    pb = perbox.get(f"{pk['chrom']}_{pk['pos']}", ("", ""))
+    pb = perbox.get(f"{pk['chrom']}_{pk['pos']}", ("", "", "", ""))
     for g, rel, dist in hits:
         rows.append([
             strain, pk["point"], pk["chrom"], pk["pos"], pk["subtype"],
             pk["log2FC"], pk["repcode"], pb[0], pb[1],
             g[4], g[5], products.get(g[4], ""), g[3], rel, dist,
+            pb[2], pb[3],
         ])
 
+# The two GBS columns are APPENDED, not inserted, so existing positional
+# indexing of this table (gene_id is still $10, relationship still $14)
+# continues to work.
 hdr = ["strain", "peak", "chrom", "peak_pos", "subtype", "chip_log2FC",
        "replication_code", "perbox_in_window", "n_perbox_hits",
        "gene_id", "gene_name", "product", "gene_strand",
-       "relationship", "dist_to_TSS"]
+       "relationship", "dist_to_TSS",
+       "gbs_perbox_in_window", "n_gbs_perbox_hits"]
 with open(out_tsv, "w") as ob:
     ob.write("\t".join(hdr) + "\n")
     for r in rows:

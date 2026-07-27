@@ -127,6 +127,13 @@ downsample:
 # -----------------------------------------------------------------------------
 motif:
   gas_perbox: "TTANAATNATTNTAA"   # GAS Per box consensus (reference only)
+  # De novo GBS PerR motif discovered in this project. Recovered independently
+  # by MEME and STREME in both serotypes (A909 reported as the reverse
+  # complement CTTATTTAKAA; CJB111 as TTCTAAATAAS / ATTCTAAATAAG). Distinct
+  # from the GAS box: TOMTOM p = 0.34, 6 bp overlap. A single IUPAC consensus
+  # is scanned identically in BOTH genomes so cross-strain counts are
+  # comparable; the strain-specific PWMs stay in memechip_*/combined.meme.
+  gbs_perbox: "TTMTAAATAAG"
   bg_order: 1                     # fasta-get-markov Markov order (AT-rich genome)
   window: 500                     # bp window centered on each ChExMix event Point
   hiconf_min_reps: 3              # "hiconf" set = called in >= N replicates
@@ -156,7 +163,7 @@ integration:
   operon_max_gap: 50       # bp: same-strand gap treated as co-transcribed
   deg_padj: 0.05
   deg_log2fc: 1
-  perbox_source: "gas"     # gas | gbs -- which Per box drives DIRECT_PERBOX
+  perbox_source: "gbs"     # gas | gbs -- which Per box drives DIRECT_PERBOX
 
 # -----------------------------------------------------------------------------
 # Cross-serotype orthology (reciprocal best hits between the two proteomes).

@@ -69,6 +69,61 @@ rule perbox_motif:
     shell:
         "iupac2meme -dna -bg {input.bg} {params.consensus} > {output.meme} 2> {log}"
 
+# ---------------------------------------------------------------------------
+# 2b. The de novo GBS PerR motif as a MEME-format motif.
+#     This is the ACTUAL result of the discovery step, re-expressed as a
+#     scannable IUPAC consensus so both genomes are scanned with an IDENTICAL
+#     matrix. Scanning each strain with its own PWM would compare counts
+#     obtained with two different matrices.
+# ---------------------------------------------------------------------------
+rule gbs_perbox_motif:
+    input:
+        bg=lambda wc: os.path.join(
+            MOTIF, "background",
+            f"{strain_assembly(wc.strain)}.m{config['motif']['bg_order']}.bg"),
+    output:
+        meme=os.path.join(MOTIF, "{strain}", "GBS_perbox.denovo.meme"),
+    params:
+        consensus=config["motif"]["gbs_perbox"],
+    log:
+        os.path.join(RESULTS, "logs", "gbs_perbox_motif_{strain}.log"),
+    conda:
+        "../envs/meme.yaml"
+    shell:
+        "iupac2meme -dna -bg {input.bg} {params.consensus} > {output.meme} 2> {log}"
+
+
+# ---------------------------------------------------------------------------
+# 7b. Genome-wide scan for the DE NOVO GBS motif (per assembly).
+#     Same threshold and same background as the GAS scan, so the two hit counts
+#     are directly comparable.
+# ---------------------------------------------------------------------------
+rule fimo_scan_gbs:
+    input:
+        motif=os.path.join(MOTIF, "{strain}", "GBS_perbox.denovo.meme"),
+        fna=lambda wc: os.path.join(
+            REF, strain_assembly(wc.strain),
+            f"{strain_assembly(wc.strain)}.fna"),
+        bg=lambda wc: os.path.join(
+            MOTIF, "background",
+            f"{strain_assembly(wc.strain)}.m{config['motif']['bg_order']}.bg"),
+    output:
+        tsv=os.path.join(MOTIF, "{strain}", "fimo_gbs", "fimo.tsv"),
+        gff=os.path.join(MOTIF, "{strain}", "fimo_gbs", "fimo.gff"),
+    params:
+        outdir=os.path.join(MOTIF, "{strain}", "fimo_gbs"),
+        thresh=config["motif"]["fimo_thresh"],
+    log:
+        os.path.join(RESULTS, "logs", "fimo_gbs_{strain}.log"),
+    conda:
+        "../envs/meme.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        fimo --oc {params.outdir} --bfile {input.bg} \
+            --thresh {params.thresh} \
+            {input.motif} {input.fna} > {log} 2>&1
+        """
 
 # ---------------------------------------------------------------------------
 # 3. Fixed-width windows around each ChExMix event Point
@@ -233,6 +288,7 @@ rule classify_peaks:
         windows=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.windows.bed"),
         events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
         fimo=os.path.join(MOTIF, "{strain}", "fimo", "fimo.tsv"),
+        fimo_gbs=os.path.join(MOTIF, "{strain}", "fimo_gbs", "fimo.tsv"),
     output:
         tsv=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.peak_classification.tsv"),
     log:
@@ -252,3 +308,5 @@ rule motif:
                strain=STRAINS, peakset=PEAKSETS),
         expand(os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.peak_classification.tsv"),
                strain=STRAINS, peakset=PEAKSETS),
+        expand(os.path.join(MOTIF, "{strain}", "fimo_gbs", "fimo.tsv"),
+               strain=STRAINS),
