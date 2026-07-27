@@ -164,6 +164,7 @@ orthology:
   evalue: 1e-5
   min_identity: 30      # % identity floor for a hit to count
   min_coverage: 50      # % of query length aligned
+  flag_identity: 90     # RBH below this % identity is flagged for manual review
 
 # -----------------------------------------------------------------------------
 # Curated motif-database comparison (valid TOMTOM statistics).

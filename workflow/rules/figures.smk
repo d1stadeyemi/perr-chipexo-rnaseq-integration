@@ -42,10 +42,10 @@ rule regulon_figures:
 
 
 rule figures:
-    """Aggregate target."""
     input:
         os.path.join(FIGS, "regulon_composition.pdf"),
         os.path.join(FIGS, "regulon_gene_counts.tsv"),
+        os.path.join(FIGS, "orthology_fig0_binding_axis.pdf"),
         os.path.join(FIGS, "orthology_fig1_conservation.pdf"),
         os.path.join(FIGS, "orthology_fig2_core_concordance.pdf"),
 
@@ -56,6 +56,7 @@ rule orthology_figures:
         crossstrain=os.path.join(ORTH, "crossstrain_regulon.tsv"),
         summary=os.path.join(ORTH, "crossstrain_summary.tsv"),
     output:
+        fig0=os.path.join(FIGS, "orthology_fig0_binding_axis.pdf"),
         fig1=os.path.join(FIGS, "orthology_fig1_conservation.pdf"),
         fig2=os.path.join(FIGS, "orthology_fig2_core_concordance.pdf"),
     params:

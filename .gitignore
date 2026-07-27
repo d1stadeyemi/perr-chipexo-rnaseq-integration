@@ -12,6 +12,7 @@
 *.zip
 *.log
 *.sh
+*backup*
 
 # --- Snakemake internals -----------------------------------------------------
 .snakemake/

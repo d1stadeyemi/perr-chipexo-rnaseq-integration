@@ -70,7 +70,7 @@ rule blastp_pair:
         mkdir -p {params.dbdir}
         makeblastdb -in {input.s} -dbtype prot -out {params.dbdir}/db > {log} 2>&1
         blastp -query {input.q} -db {params.dbdir}/db \
-            -evalue {params.evalue} -max_target_seqs 5 -num_threads {threads} \
+            -evalue {params.evalue} -max_target_seqs 500 -num_threads {threads} \
             -outfmt '6 qseqid sseqid pident length qlen slen evalue bitscore' \
             -out {output.tsv} >> {log} 2>&1
         """
@@ -94,6 +94,7 @@ rule ortholog_table:
         strain_b=STRAIN_B,
         min_identity=config["orthology"]["min_identity"],
         min_coverage=config["orthology"]["min_coverage"],
+        flag_identity=config["orthology"]["flag_identity"],
     log:
         os.path.join(RESULTS, "logs", "ortholog_table.log"),
     conda:

@@ -9,3 +9,6 @@ dependencies:
   - r-patchwork
   - r-ggrepel
   - r-forcats
+  - r-ggseqlogo      
+  - r-scales         
+  - r-stringr        
