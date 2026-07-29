@@ -24,6 +24,7 @@ include: "rules/motif.smk"       # MEME-ChIP / TOMTOM / FIMO + peak classificati
 include: "rules/motifdb.smk"     # discovered motifs vs curated databases
 include: "rules/integration.smk" # ChIP-exo x RNA-seq direct regulon
 include: "rules/orthology.smk"   # cross-serotype ortholog comparison
+include: "rules/pileup.smk"      # orthologous-position signal test
 include: "rules/figures.smk"     # regulon figures
 
 

@@ -133,7 +133,17 @@ motif:
   # from the GAS box: TOMTOM p = 0.34, 6 bp overlap. A single IUPAC consensus
   # is scanned identically in BOTH genomes so cross-strain counts are
   # comparable; the strain-specific PWMs stay in memechip_*/combined.meme.
-  gbs_perbox: "TTMTAAATAAG"
+  gbs_perbox: "TTMTAAATAAG"     # kept: consensus form, used as a robustness check
+  # Which representation of the GBS motif drives the FIMO scan.
+  #   pwm       = the MEME-discovered position weight matrix (RECOMMENDED)
+  #   consensus = iupac2meme on gbs_perbox above
+  gbs_motif_source: "pwm"
+  # Motif ID to extract from MEME-ChIP's combined.meme, and which strain's
+  # discovery to take it from. ONE matrix scans BOTH genomes so the two hit
+  # counts are directly comparable. A909 is used because its discovery is the
+  # strongest (E = 2.3e-10 vs 7.7e-4 for the CJB111 MEME motif).
+  gbs_pwm_strain: "A909"
+  gbs_pwm_id: "1"
   bg_order: 1                     # fasta-get-markov Markov order (AT-rich genome)
   window: 500                     # bp window centered on each ChExMix event Point
   hiconf_min_reps: 3              # "hiconf" set = called in >= N replicates
@@ -191,3 +201,40 @@ motifdb:
     - "collectf.meme"          #  84 motifs, w 9-53
   thresh: 0.5          # report matches up to this q-value (permissive; filter later)
   dist: "pearson"      # column comparison metric
+
+# -----------------------------------------------------------------------------
+# Orthologous-position signal test (results/09_pileup).
+# Depth-matching removed SEQUENCING DEPTH as the explanation for A909 85 bound
+# genes vs CJB111 28. It cannot remove IP EFFICIENCY: the half-slurry prep gives
+# CJB111 SignalFraction 0.102 vs A909 0.185, and downsampling scales signal and
+# background together. This module asks the discriminating question directly --
+# what does the read pileup look like at the CJB111 position orthologous to each
+# A909-only site, ignoring whether a peak was called there?
+# -----------------------------------------------------------------------------
+pileup:
+  # bamCoverage. Coverage is built from results/04_downsample/bam (depth-matched),
+  # NOT from the core's delivered bigwigs, which are full-depth with unknown
+  # normalisation and would reintroduce the depth confound.
+  # For 5'-end-only (crosslink-resolution) coverage instead of full read
+  # coverage, set: "--Offset 1 --samFlagInclude 64"
+  bamcoverage_extra: ""
+
+  # Method (a): window at the orthologous gene's TSS, strand-aware.
+  # 300 bp matches integration.max_upstream so the same promoter definition is
+  # used throughout; 100 bp downstream catches sites just inside the 5' end.
+  tss_upstream: 300
+  tss_downstream: 100
+
+  # Method (b): half-window around the lifted base. 100 bp is generous relative
+  # to a ChIP-exo footprint (tens of bp) but tolerates small alignment offsets.
+  lift_halfwindow: 100
+
+  # nucmer anchor parameters. Defaults (20/65) are tuned for distant genomes;
+  # these two strains are ~99% identical over the core, so longer anchors give
+  # cleaner 1-to-1 blocks with fewer spurious repeat matches.
+  nucmer_minmatch: 40
+  nucmer_mincluster: 100
+
+  # Random liftable positions defining the background distribution.
+  n_null_positions: 2000
+  null_seed: 42

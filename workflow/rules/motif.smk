@@ -100,7 +100,9 @@ rule gbs_perbox_motif:
 # ---------------------------------------------------------------------------
 rule fimo_scan_gbs:
     input:
-        motif=os.path.join(MOTIF, "{strain}", "GBS_perbox.denovo.meme"),
+        motif=(os.path.join(MOTIF, "gbs_denovo.pwm.meme")
+               if config["motif"]["gbs_motif_source"] == "pwm"
+               else os.path.join(MOTIF, "{strain}", "GBS_perbox.denovo.meme")),
         fna=lambda wc: os.path.join(
             REF, strain_assembly(wc.strain),
             f"{strain_assembly(wc.strain)}.fna"),
@@ -298,6 +300,32 @@ rule classify_peaks:
     script:
         "../scripts/classify_peaks.py"
 
+rule gbs_pwm_motif:
+    """Extract the de novo GBS PerR PWM from MEME-ChIP output.
+
+    ONE matrix is used for BOTH genomes. Scanning each strain with its own PWM
+    would compare counts obtained with two different matrices -- and the two
+    discoveries are not even in the same orientation (A909 reported the reverse
+    complement, CJB111 the forward strand), so their motif IDs and ranks differ.
+    Taking the strongest single discovery and applying it symmetrically is the
+    only clean cross-strain comparison."""
+    input:
+        combined=os.path.join(
+            MOTIF, config["motif"]["gbs_pwm_strain"], "memechip_all", "combined.meme"),
+    output:
+        meme=os.path.join(MOTIF, "gbs_denovo.pwm.meme"),
+    params:
+        mid=config["motif"]["gbs_pwm_id"],
+    log:
+        os.path.join(RESULTS, "logs", "gbs_pwm_motif.log"),
+    conda:
+        "../envs/meme.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        meme-get-motif -id {params.mid} {input.combined} > {output.meme} 2> {log}
+        grep -c '^MOTIF' {output.meme} >> {log}
+        """
 
 rule motif:
     """Aggregate target: motif analysis for every strain x peak set."""

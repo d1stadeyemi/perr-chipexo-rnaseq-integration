@@ -1,0 +1,8 @@
+name: perr-pileup
+channels: [conda-forge, bioconda]
+dependencies:
+  - python=3.12
+  - pybigwig
+  - deeptools=3.5.5
+  - mummer4
+  - numpy
