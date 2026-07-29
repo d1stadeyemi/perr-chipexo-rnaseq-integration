@@ -1,0 +1,9 @@
+name: perr-igv
+channels: [conda-forge, bioconda]
+dependencies:
+  - python=3.12
+  - samtools=1.21
+  - deeptools=3.5.5
+  - ucsc-bigwigtobedgraph
+  - ucsc-bedgraphtobigwig
+  - numpy
