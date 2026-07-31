@@ -275,6 +275,43 @@ rule igv_flagship_loci:
     script:
         "../scripts/make_igv_flagship.py"
 
+# ---------------------------------------------------------------------------
+# 6b. Stage the reference into the IGV tree
+# ---------------------------------------------------------------------------
+rule igv_stage_genome:
+    """Copy the reference FASTA, its index and the GFF into results/10_igv/.
+
+    WHY COPY RATHER THAN REFERENCE IN PLACE: the session files carry paths
+    relative to their own directory, so every resource must live under
+    results/10_igv/ for the tree to be portable. With this rule,
+
+        tar czf igv_bundle.tar.gz results/10_igv
+
+    is a complete bundle that opens on any machine with nothing outside it to
+    chase. Cost is ~2 MB FASTA + ~5 MB GFF per strain, which is nothing against
+    the bigWigs.
+
+    The .fai is copied too: IGV needs it and will otherwise try to write one
+    next to the FASTA, which fails if the bundle is extracted read-only."""
+    input:
+        fna=lambda wc: os.path.join(REF, wc.asm, f"{wc.asm}.fna"),
+        fai=lambda wc: os.path.join(REF, wc.asm, f"{wc.asm}.fna.fai"),
+        gff=lambda wc: os.path.join(REF, wc.asm, f"{wc.asm}.gff"),
+    output:
+        fna=os.path.join(IGV, "genome", "{asm}", "{asm}.fna"),
+        fai=os.path.join(IGV, "genome", "{asm}", "{asm}.fna.fai"),
+        gff=os.path.join(IGV, "genome", "{asm}", "{asm}.gff"),
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.fna})
+        cp -f {input.fna} {output.fna}
+        cp -f {input.fai} {output.fai}
+        awk -F'\t' 'BEGIN{OFS="\t"}
+            /^#/ {print; next}
+            $3=="region" || $3=="sequence_feature" {next}
+            {print}' {input.gff} > {output.gff}
+        """
 
 # ---------------------------------------------------------------------------
 # 7. Session files, batch scripts and documentation
@@ -298,10 +335,17 @@ rule igv_session:
         motif_gas=os.path.join(IGV, "tracks", "{strain}.motif_gas.gff"),
         regulon=os.path.join(IGV, "tracks", "{strain}.direct_regulon.bed"),
         flagship=os.path.join(IGV, "loci", "flagship_loci.tsv"),
+        # staged INSIDE results/10_igv/ so the session's relative paths stay
+        # inside the bundle
         fna=lambda wc: os.path.join(
-            REF, strain_assembly(wc.strain), f"{strain_assembly(wc.strain)}.fna"),
+            IGV, "genome", strain_assembly(wc.strain),
+            f"{strain_assembly(wc.strain)}.fna"),
+        fai=lambda wc: os.path.join(
+            IGV, "genome", strain_assembly(wc.strain),
+            f"{strain_assembly(wc.strain)}.fna.fai"),
         gff=lambda wc: os.path.join(
-            REF, strain_assembly(wc.strain), f"{strain_assembly(wc.strain)}.gff"),
+            IGV, "genome", strain_assembly(wc.strain),
+            f"{strain_assembly(wc.strain)}.gff"),
     output:
         session=os.path.join(IGV, "session", "{strain}_{depth}.xml"),
         session_mirror=os.path.join(IGV, "session", "{strain}_{depth}_mirrored.xml"),

@@ -262,8 +262,8 @@ igv:
   # Display defaults written into the session XML. Autoscale is always OFF:
   # with it on, a weak signal and a strong signal render identically because
   # each is scaled to its own maximum.
-  range_ip: 150
-  range_ctrl: 150
+  range_ip: 20
+  range_ctrl: 20
   colors:
     forward:   "0,90,160"
     reverse:   "168,71,28"
@@ -277,3 +277,70 @@ igv:
   #   zoom    = TSS +/- this, which is what resolves the strand doublet
   flank_context: 750
   flank_zoom: 250
+
+# How resource paths are written into the session XML.
+  #   relative  RECOMMENDED. Anchored on the session file's own directory, so
+  #             `tar czf igv_bundle.tar.gz results/10_igv` opens on any machine.
+  #   absolute  Cluster-only. Convenient if you never move the files and prefer
+  #             paths you can paste into a terminal.
+  path_style: "relative"
+
+# -----------------------------------------------------------------------------
+# Parameter sensitivity (results/11_sensitivity/).
+#
+# Every value below is a STRING, deliberately: these strings go straight into
+# directory names, so "1.0" and "1" cannot silently produce two directories for
+# the same setting.
+#
+# config/config.yaml is NEVER modified by this module. Each combination writes
+# to its own subtree and reads the production files without touching them.
+# -----------------------------------------------------------------------------
+sensitivity:
+ 
+  # ---- seconds. Run routinely. --------------------------------------------
+  cheap:
+    # Peak -> gene assignment. Robison et al. PNAS 99:7304 (2002) support ~300 nt
+    # upstream; the GBS same-strand intergenic distribution has its within-operon
+    # mode below ~20 bp and goes flat above ~30, so 0-100 brackets the trough.
+    assignment:
+      max_upstream: ["200", "300", "400"]
+      operon_max_gap: ["0", "50", "100"]
+ 
+    # Differential-expression cutoffs. 0.585 = 1.5-fold, 1.0 = 2-fold (production),
+    # 1.5 = ~2.8-fold. Likely the largest remaining lever on the direct/indirect
+    # split, since it decides which bound genes count as responsive.
+    deg:
+      padj: ["0.01", "0.05"]
+      log2fc: ["0.585", "1", "1.5"]
+ 
+    # Reciprocal-best-hit floors. BLAST is not re-run; the same output is
+    # re-filtered, which is why this costs seconds.
+    orthology:
+      min_identity: ["30", "50"]
+      min_coverage: ["50", "70"]
+ 
+  # ---- minutes ------------------------------------------------------------
+  moderate:
+    # Directly moves the "37 of 87 peaks carry the motif" figure.
+    fimo:
+      thresh: ["1e-3", "1e-4", "1e-5"]
+ 
+  # ---- hours. Opt-in. -----------------------------------------------------
+  expensive:
+    # THE HALF-SITE QUESTION. Production capped width at 20 bp, which would
+    # truncate a full Fur-family 7-1-7 inverted repeat (~22-30 bp).
+    #   zoops = zero or one occurrence per sequence (production)
+    #   anr   = any number -- the only mode that can report TWO copies in one
+    #           window, which is what a dimer on an inverted repeat produces
+    meme:
+      maxw: ["20", "30", "40"]
+      mod: ["zoops", "anr"]
+ 
+    # --minfold is LINEAR fold, not log2: 1.0 disables the enrichment filter,
+    # 1.5 is production, 2.0 is stricter. ~28 min per strain per combination.
+    chexmix:
+      qvalue: ["0.01", "0.05"]
+      minfold: ["1.0", "1.5", "2.0"]
+ 
+  # Which axes appear in SENSITIVITY_REPORT.md. Add "fimo" once it has run.
+  report_axes: ["assignment", "deg", "orthology"]

@@ -27,6 +27,7 @@ include: "rules/orthology.smk"   # cross-serotype ortholog comparison
 include: "rules/pileup.smk"      # orthologous-position signal test
 include: "rules/figures.smk"     # regulon figures
 include: "rules/igv.smk"         # IGV-ready tracks, sessions and documentation
+include: "rules/sensitivity.smk"   # parameter sensitivity, parallel tree
 
 
 # ----------------------------------------------------------------------------
