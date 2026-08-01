@@ -333,7 +333,7 @@ sensitivity:
     #   anr   = any number -- the only mode that can report TWO copies in one
     #           window, which is what a dimer on an inverted repeat produces
     meme:
-      maxw: ["20", "30", "40"]
+      maxw: ["20", "30"]       # MEME 5.5.9 caps maxw at 30
       mod: ["zoops", "anr"]
  
     # --minfold is LINEAR fold, not log2: 1.0 disables the enrichment filter,

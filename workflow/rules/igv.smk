@@ -308,9 +308,9 @@ rule igv_stage_genome:
         cp -f {input.fna} {output.fna}
         cp -f {input.fai} {output.fai}
         # Drop the whole-chromosome 'region' feature: it carries no Name
-        # attribute, so IGV labels it ANONYMOUS and — spanning 2.1 Mb — that
+        # attribute, so IGV labels it ANONYMOUS and, spanning 2.1 Mb, that
         # label sits on top of every gene name in every view.
-        # No braces: Snakemake reads { } in shell blocks as format placeholders.
+        # NOTE curly braces are format placeholders here, even inside comments.
         awk -F'\t' '$3 != "region" && $3 != "sequence_feature"' \
             {input.gff} > {output.gff}
         """
