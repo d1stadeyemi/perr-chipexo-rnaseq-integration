@@ -304,7 +304,7 @@ sensitivity:
     # mode below ~20 bp and goes flat above ~30, so 0-100 brackets the trough.
     assignment:
       max_upstream: ["200", "300", "400"]
-      operon_max_gap: ["0", "50", "100"]
+      operon_max_gap: ["0", "50", "100", "150", "200"]
  
     # Differential-expression cutoffs. 0.585 = 1.5-fold, 1.0 = 2-fold (production),
     # 1.5 = ~2.8-fold. Likely the largest remaining lever on the direct/indirect
