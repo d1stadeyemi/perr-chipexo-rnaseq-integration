@@ -204,8 +204,8 @@ rule igv_tracks:
     additionally writes peak BEDs carrying fold-enrichment, subtype and motif
     status in the name field, so hovering a peak in IGV shows its statistics."""
     input:
-        events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
-        events_ds=os.path.join(DS, "peaks", "{strain}_ds", "{strain}_ds.events"),
+        events=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"),
+        events_ds=os.path.join(DS_PEAKS_CHEXMIX, "{strain}_ds", "{strain}_ds.events"),
         classif=os.path.join(MOTIF, "{strain}", "{strain}.all.peak_classification.tsv"),
         fimo_gbs=os.path.join(MOTIF, "{strain}", "fimo_gbs", "fimo.gff"),
         fimo_gas=os.path.join(MOTIF, "{strain}", "fimo", "fimo.gff"),
@@ -262,7 +262,7 @@ rule igv_flagship_loci:
         loci=expand(os.path.join(IGV, "loci", "{strain}.loci.tsv"), strain=STRAINS),
         crossstrain=os.path.join(ORTH, "crossstrain_regulon.tsv"),
         orthoanchor=os.path.join(RESULTS, "09_pileup", "orthoanchor_signal.tsv"),
-        events=expand(os.path.join(PEAKS, "{strain}", "{strain}.events"), strain=STRAINS),
+        events=expand(os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"), strain=STRAINS),
     output:
         tsv=os.path.join(IGV, "loci", "flagship_loci.tsv"),
     params:

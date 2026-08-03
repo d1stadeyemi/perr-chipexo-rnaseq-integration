@@ -59,12 +59,12 @@ rule chexmix:
         bams=lambda wc: chexmix_input_bams(wc.strain),
         geninfo=lambda wc: ref_geninfo(strain_assembly(wc.strain)),
     output:
-        events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
-        bed=os.path.join(PEAKS, "{strain}", "{strain}.bed"),
-        repcodes=os.path.join(PEAKS, "{strain}", "{strain}.replicationcodes.table"),
-        done=touch(os.path.join(PEAKS, "{strain}", ".chexmix.done")),
+        events=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"),
+        bed=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.bed"),
+        repcodes=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.replicationcodes.table"),
+        done=touch(os.path.join(PEAKS_CHEXMIX, "{strain}", ".chexmix.done")),
     params:
-        outdir=os.path.join(PEAKS, "{strain}"),
+        outdir=os.path.join(PEAKS_CHEXMIX, "{strain}"),
         outname=lambda wc: wc.strain,
         signal=lambda wc: chexmix_signal_flags(wc.strain),
         control=lambda wc: chexmix_control_flags(wc.strain),
@@ -136,5 +136,5 @@ rule chexmix:
 rule peaks:
     """Aggregate target: call peaks for every strain."""
     input:
-        expand(os.path.join(PEAKS, "{strain}", "{strain}.events"), strain=STRAINS),
-        expand(os.path.join(PEAKS, "{strain}", "{strain}.bed"), strain=STRAINS),
+        expand(os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"), strain=STRAINS),
+        expand(os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.bed"), strain=STRAINS),

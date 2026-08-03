@@ -206,8 +206,8 @@ rule pileup_nucmer:
 rule pileup_lift:
     input:
         coords=os.path.join(PILE, "nucmer", "A_vs_B.1coords"),
-        events_a=os.path.join(PEAKS, STRAIN_A, f"{STRAIN_A}.events"),
-        events_b=os.path.join(PEAKS, STRAIN_B, f"{STRAIN_B}.events"),
+        events_a=os.path.join(PEAKS_CHEXMIX, STRAIN_A, f"{STRAIN_A}.events"),
+        events_b=os.path.join(PEAKS_CHEXMIX, STRAIN_B, f"{STRAIN_B}.events"),
         bw_a_ip=os.path.join(PILE, "bigwig", f"{STRAIN_A}.ip.cpm.bw"),
         bw_b_ip=os.path.join(PILE, "bigwig", f"{STRAIN_B}.ip.cpm.bw"),
         bw_b_ct=os.path.join(PILE, "bigwig", f"{STRAIN_B}.ctrl.cpm.bw"),

@@ -23,6 +23,8 @@
 # =============================================================================
 
 DS = os.path.join(RESULTS, "04_downsample")
+DS_PEAKS_CHEXMIX = os.path.join(DS, "peaks", "chexmix")
+DS_PEAKS_GEM     = os.path.join(DS, "peaks", "gem")
 
 
 rule ds_count_reads:
@@ -147,9 +149,9 @@ rule ds_chexmix:
         bams=lambda wc: ds_inputs(wc.strain),
         geninfo=lambda wc: ref_geninfo(strain_assembly(wc.strain)),
     output:
-        events=os.path.join(DS, "peaks", "{strain}_ds", "{strain}_ds.events"),
+        events=os.path.join(DS_PEAKS_CHEXMIX, "{strain}_ds", "{strain}_ds.events"),
     params:
-        outdir=os.path.join(DS, "peaks", "{strain}_ds"),
+        outdir=os.path.join(DS_PEAKS_CHEXMIX, "{strain}_ds"),
         outname=lambda wc: f"{wc.strain}_ds",
         signal=lambda wc: ds_signal_flags(wc.strain),
         control=lambda wc: ds_control_flags(wc.strain),
@@ -203,8 +205,8 @@ rule ds_chexmix:
 rule ds_summary:
     """Side-by-side: primary vs depth-matched event counts per strain."""
     input:
-        primary=expand(os.path.join(PEAKS, "{strain}", "{strain}.events"), strain=STRAINS),
-        ds=expand(os.path.join(DS, "peaks", "{strain}_ds", "{strain}_ds.events"), strain=STRAINS),
+        primary=expand(os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"), strain=STRAINS),
+        ds=expand(os.path.join(DS_PEAKS_CHEXMIX, "{strain}_ds", "{strain}_ds.events"), strain=STRAINS),
         targets=os.path.join(DS, "targets.tsv"),
     output:
         tsv=os.path.join(DS, "downsample_summary.tsv"),
@@ -214,8 +216,8 @@ rule ds_summary:
                 return sum(1 for ln in fh if not ln.startswith("#"))
         rows = []
         for strain in STRAINS:
-            p = os.path.join(PEAKS, strain, f"{strain}.events")
-            d = os.path.join(DS, "peaks", f"{strain}_ds", f"{strain}_ds.events")
+            p = os.path.join(PEAKS_CHEXMIX, strain, f"{strain}.events")
+            d = os.path.join(DS_PEAKS_CHEXMIX, f"{strain}_ds", f"{strain}_ds.events")
             rows.append((strain, n_events(p), n_events(d)))
         with open(output.tsv, "w") as fh:
             fh.write("strain\tevents_primary\tevents_depth_matched\n")

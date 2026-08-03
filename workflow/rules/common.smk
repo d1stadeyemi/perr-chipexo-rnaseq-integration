@@ -147,6 +147,10 @@ def all_raw_targets():
 # =============================================================================
 REF = config["reference"]["outdir"]
 PEAKS = os.path.join(RESULTS, "03_peaks")
+# Peak calls are segregated by CALLER so that a second caller can be added
+# without either overwriting the other. PEAKS remains the parent directory.
+PEAKS_CHEXMIX = os.path.join(PEAKS, "chexmix")
+PEAKS_GEM     = os.path.join(PEAKS, "gem")
 
 
 def strain_accession(strain):
@@ -154,7 +158,6 @@ def strain_accession(strain):
     accs = {SAMPLES[s]["accession"] for s in strain_ids(strain)}
     assert len(accs) == 1, f"{strain} maps to multiple accessions: {accs}"
     return accs.pop()
-
 
 def strain_assembly(strain):
     return config["strains"][strain]["assembly"]

@@ -134,8 +134,8 @@ rule fimo_scan_gbs:
 # ---------------------------------------------------------------------------
 rule events_to_bed:
     input:
-        events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
-        repcodes=os.path.join(PEAKS, "{strain}", "{strain}.replicationcodes.table"),
+        events=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"),
+        repcodes=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.replicationcodes.table"),
         fai=lambda wc: os.path.join(
             REF, strain_assembly(wc.strain),
             f"{strain_assembly(wc.strain)}.fna.fai"),
@@ -288,7 +288,7 @@ rule fimo_scan:
 rule classify_peaks:
     input:
         windows=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.windows.bed"),
-        events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
+        events=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"),
         fimo=os.path.join(MOTIF, "{strain}", "fimo", "fimo.tsv"),
         fimo_gbs=os.path.join(MOTIF, "{strain}", "fimo_gbs", "fimo.tsv"),
     output:

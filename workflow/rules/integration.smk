@@ -43,8 +43,8 @@ rule assign_peaks:
     input:
         gff=lambda wc: os.path.join(
             REF, strain_assembly(wc.strain), f"{strain_assembly(wc.strain)}.gff"),
-        events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
-        repcodes=os.path.join(PEAKS, "{strain}", "{strain}.replicationcodes.table"),
+        events=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"),
+        repcodes=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.replicationcodes.table"),
         classification=os.path.join(
             MOTIF, "{strain}", "{strain}.all.peak_classification.tsv"),
     output:

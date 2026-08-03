@@ -107,7 +107,7 @@ wildcard_constraints:
 def sens_in_events(wc):
     if wc.axis == "chexmix":
         return os.path.join(SENS, "chexmix", wc.combo, f"{wc.strain}.events")
-    return os.path.join(PEAKS, wc.strain, f"{wc.strain}.events")
+    return os.path.join(PEAKS_CHEXMIX, wc.strain, f"{wc.strain}.events")
 
 
 def sens_in_classification(wc):
@@ -234,7 +234,7 @@ rule sens_classify_peaks:
     at production settings: only the GBS threshold is under test."""
     input:
         windows=os.path.join(MOTIF, "{strain}", "{strain}.all.windows.bed"),
-        events=os.path.join(PEAKS, "{strain}", "{strain}.events"),
+        events=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.events"),
         fimo=os.path.join(MOTIF, "{strain}", "fimo", "fimo.tsv"),
         fimo_gbs=os.path.join(SENS, "fimo", "{combo}", "{strain}", "fimo.tsv"),
     output:
@@ -257,7 +257,7 @@ rule sens_assign_peaks:
         gff=lambda wc: os.path.join(
             REF, strain_assembly(wc.strain), f"{strain_assembly(wc.strain)}.gff"),
         events=sens_in_events,
-        repcodes=os.path.join(PEAKS, "{strain}", "{strain}.replicationcodes.table"),
+        repcodes=os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.replicationcodes.table"),
         classification=sens_in_classification,
     output:
         tsv=os.path.join(SENS, "{axis}", "{combo}",
