@@ -101,7 +101,7 @@ peaks:
   chexmix_mappability: 0.98      # bacterial genome, unique mapping (default 0.8 is human)
   chexmix_mem_gb: 48             # java heap; ChExMix is memory-intensive
   chexmix_threads: 8
-  chexmix_qvalue: 0.01           # event significance threshold
+  chexmix_qvalue: 0.05           # event significance threshold
   chexmix_extra: ""              # extra flags, e.g. "--mappability 0.95"
   format: "BAM"                  # ChExMix reads BAM via the SAM loader
   chexmix_minfold: 1.5            # min fold over scaled control (default)
@@ -172,7 +172,7 @@ integration:
   max_upstream: 300        # bp: peak within this distance 5' of a TSS = promoter
   operon_max_gap: 50       # bp: same-strand gap treated as co-transcribed
   deg_padj: 0.05
-  deg_log2fc: 1
+  deg_log2fc: 0.585
   perbox_source: "gbs"     # gas | gbs -- which Per box drives DIRECT_PERBOX
 
 # -----------------------------------------------------------------------------
@@ -201,6 +201,25 @@ motifdb:
     - "collectf.meme"          #  84 motifs, w 9-53
   thresh: 0.5          # report matches up to this q-value (permissive; filter later)
   dist: "pearson"      # column comparison metric
+
+# -----------------------------------------------------------------------------
+# Motif-less peak analysis (results/13_motifless/).
+#
+# ~57% of A909 peaks carry no GBS motif at FIMO p<1e-4. This module asks why:
+# degenerate sites, a second binding mode, or indirect tethering by a partner
+# protein. The motif-POSITIVE subset is analysed identically as the control --
+# a motif enriched only in the motif-less peaks means something; one present in
+# both does not.
+# -----------------------------------------------------------------------------
+motifless:
+  # MEME-ChIP reports this many motifs per subset. More than the default 1
+  # because the question is whether ANY signal exists, not what the best one is.
+  nmotifs: 5
+
+  # Subsets smaller than this are flagged UNDERPOWERED in the report rather
+  # than having a motif read off them. CJB111 has ~8 motif-less peaks; MEME on
+  # 8 sequences will return something, and it will not mean anything.
+  min_seqs: 20
 
 # -----------------------------------------------------------------------------
 # Orthologous-position signal test (results/09_pileup).
@@ -344,3 +363,29 @@ sensitivity:
  
   # Which axes appear in SENSITIVITY_REPORT.md. Add "fimo" once it has run.
   report_axes: ["assignment", "deg", "orthology"]
+
+# -----------------------------------------------------------------------------
+# Cross-caller concordance (results/12_concordance/).
+#
+# The GEM run itself is NOT a pipeline rule: it needed hand-calibrated --icr and
+# --a because GEM's estimators degrade at this coverage depth (see
+# workflow/scripts/gem_concordance.sh). Only the comparison is automated, so the
+# number quoted in the manuscript regenerates from the workflow.
+# -----------------------------------------------------------------------------
+concordance:
+  # Paths to the GEM event files produced by gem_concordance.sh.
+  # Omit a strain to skip it.
+  gem_events:
+    A909: "results/gem_icr/A9091_a50/A9091_a50.GPS_events.txt"
+
+  # Several tolerances: the two callers segment dense regions differently, so a
+  # single number would either understate agreement (strict) or overstate it
+  # (loose). Both are reported.
+  tolerances: [25, 50, 100, 200]
+
+  # Loci checked individually in the log.
+  flagship:
+    perR_autoregulation: 410421
+    ABC_transporter_operon: 758769
+    VIT1_CCC1_anchor: 874861
+    SAK_RS04085: 1407424
