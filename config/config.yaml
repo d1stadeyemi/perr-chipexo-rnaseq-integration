@@ -149,7 +149,7 @@ motif:
   hiconf_min_reps: 3              # "hiconf" set = called in >= N replicates
   meme_mod: "zoops"               # zero-or-one occurrence per sequence
   meme_minw: 6                    # brackets the 15 bp Per box
-  meme_maxw: 20
+  meme_maxw: 30
   memechip_extra: ""              # extra meme-chip flags if needed
   tomtom_thresh: 0.1              # TOMTOM E-value threshold
   fimo_thresh: 0.0001             # FIMO p-value threshold (default 1e-4)
