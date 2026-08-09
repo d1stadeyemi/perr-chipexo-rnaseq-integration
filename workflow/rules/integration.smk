@@ -53,6 +53,7 @@ rule assign_peaks:
         strain=lambda wc: wc.strain,
         max_upstream=config["integration"]["max_upstream"],
         operon_max_gap=config["integration"]["operon_max_gap"],
+        min_reps=config["integration"]["min_reps"],
     log:
         os.path.join(RESULTS, "logs", "assign_peaks_{strain}.log"),
     conda:

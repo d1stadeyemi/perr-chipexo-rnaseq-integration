@@ -122,6 +122,18 @@ rule motifless_memechip:
             -minw {params.minw} -maxw {params.maxw} \
             -dna -meme-p {threads} \
             {input.fa} > {log} 2>&1
+        # MEME-ChIP writes combined.meme ONLY when a motif survives its
+        # threshold. Finding nothing is a legitimate outcome for this analysis
+        # -- it is the "no recoverable sequence signal" result -- so a
+        # placeholder is written rather than failing the rule.
+        if [ ! -f {output.combined} ]; then
+            printf 'MEME version 5\n\nALPHABET= ACGT\n\n# NO MOTIFS DISCOVERED\n' \
+                > {output.combined}
+            echo "NO MOTIFS DISCOVERED in this subset" >> {log}
+        fi
+        [ -s {output.summary} ] || \
+            printf 'MOTIF_INDEX\tMOTIF_SOURCE\tMOTIF_ID\tALT_ID\tCONSENSUS\tWIDTH\tSITES\tE-VALUE\n' \
+                > {output.summary}
         """
 
 
@@ -149,8 +161,61 @@ rule motifless_tomtom_db:
     shell:
         r"""
         set -euo pipefail
-        tomtom -oc {params.outdir} -thresh {params.thresh} \
-            -dist {params.dist} {input.combined} {input.dbs} > {log} 2>&1
+        mkdir -p {params.outdir}
+        # An empty query is legitimate: MEME-ChIP writes no motifs when none
+        # survive threshold, and TOMTOM exits fatally on a query with no
+        # loadable motifs.
+        if grep -q '^MOTIF ' {input.combined}; then
+            tomtom -oc {params.outdir} -thresh {params.thresh} \
+                -dist {params.dist} {input.combined} {input.dbs} > {log} 2>&1
+        else
+            echo "query contains no motifs; TOMTOM skipped" > {log}
+            printf 'Query_ID\tTarget_ID\tOptimal_offset\tp-value\tE-value\tq-value\n' \
+                > {output.tsv}
+        fi
+        """
+
+rule motifless_sea:
+    """4b proper: are any KNOWN TF motifs enriched in the motif-less peaks?
+
+    TOMTOM (rule motifless_tomtom_db) compares DISCOVERED motifs to the
+    database and is therefore silent when nothing is discovered -- which is
+    exactly the A909 case. SEA scans the SEQUENCES directly with all 558
+    curated motifs, so it answers the partner-factor question whether or not de
+    novo discovery found anything.
+
+    The motif-POSITIVE subset is the control: a TF motif enriched in both
+    subsets is a property of PerR-bound regions generally, not an explanation
+    for the motif-less ones."""
+    input:
+        fa=os.path.join(ML, "{strain}", "{strain}.{subset}.fa"),
+        dbs=[os.path.join(MDB, "PROKARYOTE", d)
+             for d in config["motifdb"]["databases"]],
+    output:
+        tsv=os.path.join(ML, "{strain}", "sea_{subset}", "sea.tsv"),
+    params:
+        outdir=os.path.join(ML, "{strain}", "sea_{subset}"),
+    log:
+        os.path.join(LOG, "motifless_sea_{strain}_{subset}.log"),
+    conda:
+        "../envs/meme.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.outdir}
+        # SEA writes sea.tsv BEFORE its HTML step, and the HTML writer in this
+        # MEME 5.5.9 build aborts ("Template does not contain data section") --
+        # the same defect that breaks CentriMo and SpaMo here. The analysis
+        # result therefore survives the crash; failure is tolerated and the TSV
+        # checked instead. A header-only TSV is a real result: no motif in the
+        # database is enriched in these sequences.
+        sea --p {input.fa} --m {input.dbs} --oc {params.outdir} > {log} 2>&1 || true
+        if [ ! -s {output.tsv} ]; then
+            echo "SEA produced no TSV at all" >> {log}
+            printf 'RANK\tDB\tID\tALT_ID\tCONSENSUS\tTP\tTP%%\tFP\tFP%%\tENR_RATIO\tSCORE_THR\tPVALUE\tLOG_PVALUE\tEVALUE\tLOG_EVALUE\tQVALUE\tLOG_QVALUE\n' \
+                > {output.tsv}
+        fi
+        echo "SEA rows (excl. header): $(($(wc -l < {output.tsv}) - 1))" >> {log}
         """
 
 
@@ -162,6 +227,8 @@ rule motifless_report:
         summaries=expand(
             os.path.join(ML, "{strain}", "memechip_{subset}", "summary.tsv"),
             strain=STRAINS, subset=["motifless", "motifpos"]),
+        sea=expand(os.path.join(ML, "{strain}", "sea_{subset}", "sea.tsv"),
+                   strain=STRAINS, subset=["motifless", "motifpos"]),
         tomtom=expand(
             os.path.join(ML, "{strain}", "tomtom_db_{subset}", "tomtom.tsv"),
             strain=STRAINS, subset=["motifless", "motifpos"]),

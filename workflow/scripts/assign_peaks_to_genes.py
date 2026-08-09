@@ -23,6 +23,10 @@ import re
 gff        = snakemake.input.gff                      # noqa: F821
 events     = snakemake.input.events                   # noqa: F821
 repcodes   = snakemake.input.repcodes                 # noqa: F821
+# Reproducibility filter for GENE ASSIGNMENT only. Peak calling and motif
+# discovery are unaffected -- discovery keeps every sequence, where statistical
+# power matters, while binding claims rest only on reproducible peaks.
+MIN_REPS = int(getattr(snakemake.params, "min_reps", 1))   # noqa: F821
 classif    = snakemake.input.classification           # noqa: F821
 out_tsv    = snakemake.output.tsv                     # noqa: F821
 strain     = snakemake.params.strain                  # noqa: F821
@@ -126,7 +130,20 @@ with open(events) as fh:
 # ---- assign --------------------------------------------------------------
 rows = []
 n_assigned = 0
+n_filtered = 0
 for pk in peaks:
+    # Peaks called in fewer than MIN_REPS replicates are retained in the peak
+    # files and used for motif discovery, but are not assigned to a gene.
+    # Measured on A909, median fold enrichment rises with replication code
+    # (0.80 / 0.91 / 1.30 for 1, 2 and 3 replicates), so this removes the
+    # weakest tier. Unparseable codes ("NA", from peaks with no matching row in
+    # the replication-codes table) are KEPT rather than silently dropped.
+    try:
+        if int(pk["repcode"]) < MIN_REPS:
+            n_filtered += 1
+            continue
+    except (ValueError, TypeError, KeyError):
+        pass
     hits = []
     for g in genes:
         if g[0] != pk["chrom"]:
@@ -181,3 +198,5 @@ with open(logp, "w") as lg:
     lg.write(f"strain={strain} genes={len(genes)} peaks={len(peaks)} "
              f"peaks_with_gene={n_assigned} assignments={len(rows)} "
              f"max_upstream={max_up} operon_gap={op_gap}\n")
+    lg.write(f"reproducibility filter: min_reps={MIN_REPS}, "
+             f"{n_filtered} peaks excluded from gene assignment\n")

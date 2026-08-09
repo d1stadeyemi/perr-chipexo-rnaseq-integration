@@ -103,10 +103,9 @@ for axis in axes:
         W(f"## {axis}\n\n*No results found at `{path}`.*\n")
         continue
 
-    pk = sorted(next(iter(grids.get(axis, {}) or {{}}.values()), {}).keys()) \
-        if grids.get(axis) else []
-    if grids.get(axis):
-        pk = sorted(next(iter(grids[axis].values())).keys())
+    # Parameter names for this axis, taken from any one combination's dict.
+    # Every combination on an axis has the same keys by construction.
+    pk = sorted(next(iter(grids[axis].values())).keys()) if grids.get(axis) else []
 
     W(f"## Axis: {axis}\n")
     W(f"{len(rows)} combinations. Full table: `{axis}/summary.tsv`\n")
@@ -147,8 +146,12 @@ for axis in axes:
 
 W("## Manuscript sentences\n")
 if summary_rows:
-    inv_all = sorted({lab for (_, lab, _, v) in summary_rows if v == "INVARIANT"})
+    # A quantity is only reportable as invariant if it is invariant on EVERY
+    # axis. Being invariant on one axis while sensitive on another means the
+    # first axis simply does not touch it -- not that the number is robust.
     sen_all = sorted({lab for (_, lab, _, v) in summary_rows if v == "SENSITIVE"})
+    inv_all = sorted({lab for (_, lab, _, v) in summary_rows
+                      if v == "INVARIANT" and lab not in sen_all})
     if inv_all:
         W("For the invariant quantities:\n")
         W("> " + "; ".join(inv_all) + " were unchanged across every parameter "

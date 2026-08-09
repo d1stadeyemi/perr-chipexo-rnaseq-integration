@@ -90,6 +90,41 @@ def read_tomtom(strain, subset, top=5):
     rows.sort(key=lambda x: x[2])
     return rows[:top]
 
+def read_sea(strain, subset, top=8):
+    """SEA output: known-motif enrichment in the SEQUENCES themselves.
+
+    This is the test that answers the partner-factor question. TOMTOM compares
+    DISCOVERED motifs against the database and is therefore silent when nothing
+    was discovered -- exactly the A909 case, where 55 motif-less peaks yielded
+    no de novo motif. SEA scans the sequences directly with all 558 curated
+    motifs, so it reports whether any known TF motif is over-represented
+    regardless of what de novo discovery found."""
+    p = os.path.join(ML, strain, f"sea_{subset}", "sea.tsv")
+    rows = []
+    if not os.path.exists(p):
+        return rows
+    with open(p) as fh:
+        hdr = fh.readline().rstrip("\n").split("\t")
+        i = {c: n for n, c in enumerate(hdr)}
+        for ln in fh:
+            if ln.startswith("#") or not ln.strip():
+                continue
+            f = ln.rstrip("\n").split("\t")
+            if len(f) < len(hdr):
+                continue
+            try:
+                qv = float(f[i["QVALUE"]]) if "QVALUE" in i else float(f[i["EVALUE"]])
+            except (ValueError, KeyError, IndexError):
+                continue
+            rows.append((
+                f[i["ID"]] if "ID" in i else f[0],
+                f[i["ALT_ID"]] if "ALT_ID" in i else "",
+                qv,
+                f[i["TP%"]] if "TP%" in i else "",
+            ))
+    rows.sort(key=lambda x: x[2])
+    return rows[:top]
+
 
 L, W = [], None
 L.append("# Motif-less peaks: how does PerR reach them?\n")
@@ -135,6 +170,22 @@ for s in strains:
             L.append("")
         else:
             L.append("*No database match at the reporting threshold.*\n")
+
+        sea = read_sea(s, sub)
+        if sea:
+            L.append("**Known TF motifs enriched in these SEQUENCES "
+                     "(SEA vs 558 curated motifs):**\n")
+            L.append("| motif | name | q-value | % positive seqs |")
+            L.append("|---|---|---|---|")
+            for mid, alt, qv, tp in sea:
+                L.append(f"| {mid} | {alt} | {qv:.3g} | {tp} |")
+            L.append("")
+            L.append("> Only motifs enriched HERE and NOT in the other subset "
+                     "are candidate partner factors. A motif present in both is "
+                     "a property of PerR-bound regions generally.\n")
+        else:
+            L.append("*No known TF motif enriched in these sequences (SEA).*\n")
+
         for m in ms:
             tsv_rows.append([s, sub, sp.get(sub, 0), m["consensus"], m["width"],
                              m["sites"], m["evalue"]])
