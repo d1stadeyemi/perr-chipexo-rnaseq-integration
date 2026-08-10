@@ -13,7 +13,8 @@
 # =============================================================================
 
 QC = os.path.join(RESULTS, "01_qc")
-LOG = os.path.join(RESULTS, "logs")
+# LOG is defined in common.smk (included first) so that modules loaded before
+# this one can use it too.
 
 
 # ---------------------------------------------------------------------------

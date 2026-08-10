@@ -1,0 +1,20 @@
+# Sample sheet for the FASTQ entry point (input_mode: "fastq").
+#
+# sample_id      the CEGR basename WITHOUT the _FilteredBAM.bam suffix. The rest
+#                of the workflow parses strain, IP-vs-control and replicate out
+#                of this string, so it must be reproduced exactly.
+# strain         must match a key under `strains:` in config.yaml
+# kind           IP | control
+# fastq_r1/r2    paths relative to alignment.fastq_dir
+# sra_accession  optional, recorded for provenance only
+#
+# Lines beginning with # are ignored.
+sample_id	strain	kind	fastq_r1	fastq_r2	sra_accession
+43893_6xHis_ab9108_A9091_-_-_-_BX	A909	IP	SRRXXXXXXX_1.fastq.gz	SRRXXXXXXX_2.fastq.gz	SRRXXXXXXX
+43894_6xHis_ab9108_A9092_-_-_-_BX	A909	IP	SRRXXXXXXX_1.fastq.gz	SRRXXXXXXX_2.fastq.gz	SRRXXXXXXX
+43895_6xHis_ab9108_A9093_-_-_-_BX	A909	IP	SRRXXXXXXX_1.fastq.gz	SRRXXXXXXX_2.fastq.gz	SRRXXXXXXX
+43896_NoTag_ab9108_A909C_-_-_-_BX	A909	control	SRRXXXXXXX_1.fastq.gz	SRRXXXXXXX_2.fastq.gz	SRRXXXXXXX
+43897_6xHis_ab9108_CJB1111_-_-_-_BX	CJB111	IP	SRRXXXXXXX_1.fastq.gz	SRRXXXXXXX_2.fastq.gz	SRRXXXXXXX
+43898_6xHis_ab9108_CJB1112_-_-_-_BX	CJB111	IP	SRRXXXXXXX_1.fastq.gz	SRRXXXXXXX_2.fastq.gz	SRRXXXXXXX
+43899_6xHis_ab9108_CJB1113_-_-_-_BX	CJB111	IP	SRRXXXXXXX_1.fastq.gz	SRRXXXXXXX_2.fastq.gz	SRRXXXXXXX
+43900_NoTag_ab9108_CJB111C_-_-_-_BX	CJB111	control	SRRXXXXXXX_1.fastq.gz	SRRXXXXXXX_2.fastq.gz	SRRXXXXXXX

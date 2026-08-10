@@ -15,6 +15,7 @@ min_version("8.0")
 
 include: "rules/common.smk"      # sample discovery from the zip manifest
 include: "rules/setup.smk"       # extraction
+include: "rules/align.smk"       # optional: align from FASTQ instead of the archive
 include: "rules/qc.smk"          # samtools / fastqc / chipexoqual / deeptools
 include: "rules/report.smk"      # multiqc + scorecard
 include: "rules/reference.smk"   # genome download + geninfo/seq prep (PEAKS)

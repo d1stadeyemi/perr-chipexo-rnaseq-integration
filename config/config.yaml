@@ -1,13 +1,34 @@
 # =============================================================================
 # PerR ChIP-exo workflow — configuration
 # =============================================================================
-# The ONLY thing a user must edit is `input_zip` (path to the sequencing-core
-# delivery). Everything else is auto-discovered from the archive's file names.
+# In the default mode the ONLY thing a user must edit is `input_zip` (path to
+# the sequencing-core delivery). Everything else is auto-discovered from the
+# archive's file names.
 # =============================================================================
+
+# -----------------------------------------------------------------------------
+# Entry point.
+#   zip    start from the sequencing core's archive. This is the default and is
+#          what produced the published results.
+#   fastq  start from FASTQ, for example reads downloaded from SRA. Requires the
+#          sample sheet below, because FASTQ files carry no sample metadata.
+# The two are mutually exclusive: both produce results/00_raw/*.bam.
+# -----------------------------------------------------------------------------
+input_mode: "zip"
 
 # Path to the exact .zip delivered by the sequencing core (CEGR / Cornell EGC).
 # May be absolute or relative to the directory you launch Snakemake from.
+# Used only when input_mode is "zip".
 input_zip: "data/844_LBurcham_UTenn.zip"
+
+# Used only when input_mode is "fastq". Alignment reproduces the core's
+# procedure, recovered from the @PG lines of the delivered BAMs:
+# bwa 0.7.17 -> Picard MarkDuplicates (REMOVE_DUPLICATES=true) -> samtools 1.21.
+alignment:
+  sample_sheet: "config/samples_fastq.tsv"
+  fastq_dir: "data/fastq"
+  bwa_threads: 8
+  picard_mem_gb: 8
 
 # All results are written under this directory (created automatically).
 results_dir: "results"

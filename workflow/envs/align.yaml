@@ -1,0 +1,11 @@
+# Alignment from FASTQ. Versions match the sequencing core's pipeline, recovered
+# from the @PG lines of the delivered BAMs.
+name: perr-align
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bwa=0.7.17
+  - samtools=1.21
+  - picard=2.27.5      # closest available build to the core's 2.18.2 snapshot
+  - openjdk>=8
