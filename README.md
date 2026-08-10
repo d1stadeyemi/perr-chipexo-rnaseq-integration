@@ -21,7 +21,7 @@ Two serotypes of *S. agalactiae* were profiled by ChIP-exo using a 6xHis-tagged 
 | Input | one `.zip` from the sequencing core, plus an RNA-seq workbook |
 | Runtime | approximately 6 to 9 hours on 8 cores |
 
-Everything downstream of the archive is derived automatically. Sample identities, IP versus control assignment, replicate numbering, and the strain to genome mapping are all parsed from the file naming convention in the delivery manifest. 
+Everything downstream of the archive is derived automatically. Sample identities, IP versus control assignment, replicate numbering, and the strain to genome mapping are all parsed from the file naming convention in the delivery manifest. There is no sample sheet to write.
 
 ---
 
@@ -30,10 +30,11 @@ Everything downstream of the archive is derived automatically. Sample identities
 ```
 perr_chipexo/
 ├── config/
-│   └── config.yaml              all parameters, fully commented
+│   ├── config.yaml              all parameters, fully commented
+│   └── samples_fastq.tsv.example  template for the optional FASTQ entry point
 ├── workflow/
 │   ├── Snakefile                module includes and the `all` target
-│   ├── rules/                   16 rule modules, one per analysis stage
+│   ├── rules/                   17 rule modules, one per analysis stage
 │   ├── scripts/                 ~25 Python and R scripts called by rules
 │   └── envs/                    conda environment specifications
 │       └── locks/               fully resolved package lists for exact rebuilds
@@ -190,7 +191,74 @@ snakemake --sdm conda -c8 motif         # through motif discovery
 snakemake --sdm conda -c8 integration   # through RNA-seq integration
 ```
 
-### 10. Reproducing the exact software environment
+### 10. Starting from FASTQ instead of the core's archive
+
+The steps above start from the aligned BAMs supplied by the sequencing core, which is what produced the published results. Sequence data deposited in public archives are FASTQ, so reproducing this work from the public record requires aligning first.
+
+The workflow can do that. Alignment reproduces the core's documented procedure, recovered from the `@PG` lines of the delivered BAMs: `bwa 0.7.17` for alignment, `Picard MarkDuplicates` with `REMOVE_DUPLICATES=true`, and `samtools 1.21` throughout. Duplicates are removed rather than flagged, matching the delivered files.
+
+**Prepare a sample sheet.** FASTQ files carry no metadata, so the mapping from accession to the internal sample naming has to be supplied once:
+
+```bash
+cp config/samples_fastq.tsv.example config/samples_fastq.tsv
+$EDITOR config/samples_fastq.tsv        # fill in the accession columns
+```
+
+The `sample_id` column must be reproduced exactly as given in the example. Every downstream stage parses strain, IP-versus-control status and replicate number out of that string.
+
+**Download the reads.** Using the SRA toolkit, for each accession in the sheet:
+
+```bash
+mkdir -p data/fastq && cd data/fastq
+fasterq-dump --split-files --progress SRRXXXXXXX
+gzip SRRXXXXXXX_1.fastq SRRXXXXXXX_2.fastq
+cd ../..
+```
+
+**Switch the entry point** in `config/config.yaml`:
+
+```yaml
+input_mode: "fastq"
+alignment:
+  sample_sheet: "config/samples_fastq.tsv"
+  fastq_dir: "data/fastq"
+  bwa_threads: 8
+  picard_mem_gb: 8
+```
+
+**Then run as normal.** Alignment slots in ahead of quality control and everything after it is unchanged:
+
+```bash
+snakemake --sdm conda --conda-frontend conda -c8 align   # alignment only
+snakemake --sdm conda --conda-frontend conda -c8 all     # the full analysis
+```
+
+Alignment adds roughly two hours on 8 cores. `results/00_align/alignment_manifest.tsv` records the read count and tool versions per sample so a FASTQ-derived run can be distinguished from one built on the core's BAMs.
+
+Two things to be aware of. The published results were generated from the core's BAMs, not through this module, so small differences are possible: `bwa mem` output ordering depends on thread count, and read order influences which member of a duplicate pair is retained. Check `results/01_qc/` and `results/02_report/qc_scorecard.md` against the published values before drawing conclusions. Second, the two entry points are mutually exclusive, because both produce `results/00_raw/*.bam`; `input_mode` selects one.
+
+### 11. Reproducing a single strain
+
+Most of the workflow runs on one strain. Comment out the unwanted block under `strains:` in `config/config.yaml`, then request the compatible targets rather than `all`:
+
+```bash
+snakemake --sdm conda --conda-frontend conda -c8 \
+  qc peaks motif motifdb motifless integration figures igv
+```
+
+Three modules compare the two serotypes and cannot run on one:
+
+| Module | Reason |
+|---|---|
+| `orthology` | reciprocal best hits between two proteomes |
+| `pileup` | measures signal at positions orthologous between strains |
+| `downsample` | subsamples every replicate to a depth common to both strains |
+
+`downsample` deserves a note. It is a control for the cross-strain comparison, not a stage the single-strain results depend on. Running it with one strain would compute a different target depth and produce numbers that do not correspond to anything published, so it is omitted above rather than allowed to run and mislead.
+
+`sensitivity_cheap` will run, but its orthology and conservation columns will be empty.
+
+### 12. Reproducing the exact software environment
 
 The steps above pin the primary tools through `workflow/envs/*.yaml`, which is sufficient for most purposes. Conda still resolves transitive dependencies at install time, so two installations months apart can differ in libraries that are never named explicitly.
 
@@ -229,6 +297,7 @@ done
 | Stage | Module | Target | Primary tools |
 |---|---|---|---|
 | Extraction and sample discovery | `setup.smk` | `stage` | Python |
+| Alignment from FASTQ (optional) | `align.smk` | `align` | bwa, Picard, samtools |
 | Read and library quality control | `qc.smk` | `qc` | samtools, FastQC, ChIPexoQual, deepTools |
 | Aggregated QC report | `report.smk` | `report` | MultiQC |
 | Reference acquisition | `reference.smk` | `get_reference_all` | NCBI datasets CLI |
@@ -336,7 +405,7 @@ Constraints of the data and the workflow that affect interpretation. These are s
 - **Single growth condition.** Cells were harvested unstressed. The workflow cannot distinguish a site that is never bound from one bound only under peroxide stress.
 - **Epitope validation is genetic, not biochemical.** The tagged construct was confirmed by sequencing. No western blot was performed.
 - **Annotation drift.** Thirteen gene identifiers present in the RNA-seq workbook are absent from the current RefSeq annotation, indicating the expression data were quantified against a different release. This affects a small number of accessory-genome assignments.
-- **Alignment is inherited.** The workflow starts from the aligned BAMs supplied by the core and does not re-align from FASTQ. The core's parameters are recorded from the BAM headers, but the alignment itself is not independently reproduced.
+- **Alignment is inherited by default.** The published results were produced from the aligned BAMs supplied by the core, not by re-aligning from FASTQ. An optional alignment module reproduces the core's procedure for anyone starting from archived reads (see section 10), but it was not itself used to generate the published output, so small differences from read ordering and duplicate selection are possible.
 - **Motif databases are taxonomically skewed.** The curated collections used for comparison are dominated by *Escherichia coli* and *Bacillus subtilis*. A species-specific regulator absent from those collections cannot be detected by that comparison.
 - **The second peak caller is not a pipeline stage.** GEM required parameters calibrated to this dataset's coverage depth, so encoding those values in a rule would misrepresent them as general. The run is preserved as a documented script; only the concordance calculation is automated.
 
