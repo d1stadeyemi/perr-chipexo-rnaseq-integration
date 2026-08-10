@@ -1,0 +1,11 @@
+# Environment for running the workflow itself. Every other environment in this
+# directory is created automatically by Snakemake, one per rule, on first run.
+name: snakemake
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.13
+  - snakemake=9.19.0
+  - snakemake-executor-plugin-slurm
+  - mamba

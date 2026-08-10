@@ -33,33 +33,45 @@ include: "rules/concordance.smk" # GEM vs ChExMix event concordance
 
 
 # ----------------------------------------------------------------------------
-# Default target: everything needed to certify the delivery.
+# Targets.
+#   qc   certifies the delivery: provenance, per-sample metrics, reports
+#   all  the complete analysis, every stage in dependency order
 # ----------------------------------------------------------------------------
-rule all:
+rule qc:
+    """Delivery certification only. Stops before peak calling."""
     input:
-        # provenance
         expand(os.path.join(QC, "header_check", "{s}.header_check.tsv"),
                s=SAMPLE_IDS),
-        # ChIP-exo QC (per sample)
         expand(os.path.join(QC, "chipexoqual", "{s}", "{s}.metrics.tsv"),
                s=SAMPLE_IDS),
-        # deepTools grouped QC (per strain)
         expand(os.path.join(QC, "deeptools", "{strain}.fingerprint.pdf"),
                strain=STRAINS),
         expand(os.path.join(QC, "deeptools", "{strain}.spearman.pdf"),
                strain=STRAINS),
         expand(os.path.join(QC, "deeptools", "{strain}.fragsize.pdf"),
                strain=STRAINS),
-        # aggregated reports
         os.path.join(RESULTS, "02_report", "multiqc_report.html"),
         os.path.join(RESULTS, "02_report", "qc_scorecard.tsv"),
         os.path.join(RESULTS, "02_report", "qc_scorecard.md"),
 
 
-# Convenience sub-targets
-rule qc:
+rule all:
+    """Everything. Each entry is a module's own aggregate target, so the
+    dependency order is resolved by Snakemake rather than asserted here."""
     input:
-        rules.all.input,
+        rules.qc.input,
+        rules.peaks.input,
+        rules.downsample.input,
+        rules.motif.input,
+        rules.motifdb.input,
+        rules.motifless.input,
+        rules.integration.input,
+        rules.orthology.input,
+        rules.figures.input,
+        rules.pileup.input,
+        rules.igv.input,
+        rules.concordance.input,
+        rules.sensitivity_cheap.input,
 
 
 rule stage:
