@@ -372,7 +372,7 @@ sensitivity:
       minfold: ["1.0", "1.5", "2.0"]
  
   # Which axes appear in SENSITIVITY_REPORT.md. Add "fimo" once it has run.
-  report_axes: ["assignment", "deg", "orthology"]
+  report_axes: ["assignment", "reproducibility", "deg", "orthology"]
 
 # -----------------------------------------------------------------------------
 # Cross-caller concordance (results/12_concordance/).

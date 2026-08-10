@@ -150,8 +150,15 @@ if summary_rows:
     # axis. Being invariant on one axis while sensitive on another means the
     # first axis simply does not touch it -- not that the number is robust.
     sen_all = sorted({lab for (_, lab, _, v) in summary_rows if v == "SENSITIVE"})
+    # A quantity is reportable as invariant only if it is INVARIANT on EVERY
+    # axis. Being invariant on one axis while merely stable (or sensitive) on
+    # another means that axis does not touch it -- not that the number is fixed.
+    not_inv = {lab for (_, lab, _, v) in summary_rows if v != "INVARIANT"}
     inv_all = sorted({lab for (_, lab, _, v) in summary_rows
-                      if v == "INVARIANT" and lab not in sen_all})
+                      if v == "INVARIANT" and lab not in not_inv})
+    stable_all = sorted({lab for (_, lab, _, v) in summary_rows
+                         if v == "stable" and lab not in sen_all
+                         and lab not in inv_all})
     if inv_all:
         W("For the invariant quantities:\n")
         W("> " + "; ".join(inv_all) + " were unchanged across every parameter "
@@ -162,6 +169,10 @@ if summary_rows:
             if v == "SENSITIVE":
                 W(f"> {lab}: report the production value, range {rng} across the "
                   f"{a} grid.\n")
+    if stable_all:
+        W("For quantities that vary only slightly:\n")
+        W("> " + "; ".join(stable_all) + " varied by less than 15% across every "
+          "combination tested (Supplementary Table Sx).\n") 
 W("")
 W("## Reproduce\n")
 W("```bash")

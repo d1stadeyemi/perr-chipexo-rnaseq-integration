@@ -74,6 +74,10 @@ def _grid(axis, keys, fmt):
 
 SENS_GRID = {
     "assignment": _grid("assignment", ["max_upstream", "operon_max_gap"], "up{0}_gap{1}"),
+    # Minimum replication code for a peak to be assigned to a gene. Peak calling
+    # and motif discovery are unaffected; this axis measures what the
+    # reproducibility filter costs at 1, 2 and 3 replicates.
+    "reproducibility": _grid("reproducibility", ["min_reps"], "reps{0}"),
     "deg":        _grid("deg", ["padj", "log2fc"], "padj{0}_lfc{1}"),
     "orthology":  _grid("orthology", ["min_identity", "min_coverage"], "pid{0}_cov{1}"),
     "fimo":       _grid("fimo", ["thresh"], "t{0}"),
@@ -81,7 +85,7 @@ SENS_GRID = {
     "chexmix":    _grid("chexmix", ["qvalue", "minfold"], "q{0}_mf{1}"),
 }
 
-PROPAGATING = ["assignment", "deg", "orthology", "fimo"]
+PROPAGATING = ["assignment", "reproducibility", "deg", "orthology", "fimo"]
 
 
 def sens_combos(axis):
@@ -96,7 +100,7 @@ def _p(axis, combo, key, default=None):
 
 
 wildcard_constraints:
-    axis="assignment|deg|orthology|fimo|meme|chexmix",
+    axis="assignment|reproducibility|deg|orthology|fimo|meme|chexmix",
     combo="[A-Za-z0-9._+-]+",
 
 
@@ -120,7 +124,10 @@ def sens_in_classification(wc):
 def sens_in_assign(wc):
     """peak_gene_assignments: regenerated for axes that change peak calling,
     peak classification or the assignment rule itself."""
-    if wc.axis in ("assignment", "fimo", "chexmix"):
+    # reproducibility varies min_reps, which is applied inside
+    # assign_peaks_to_genes.py -- so this axis needs its own assignment step
+    # too, not the production file.
+    if wc.axis in ("assignment", "reproducibility", "fimo", "chexmix"):
         return os.path.join(SENS, wc.axis, wc.combo,
                             f"{wc.strain}.peak_gene_assignments.tsv")
     return os.path.join(INTEG, wc.strain, f"{wc.strain}.peak_gene_assignments.tsv")
@@ -268,6 +275,10 @@ rule sens_assign_peaks:
                                    config["integration"]["max_upstream"]),
         operon_max_gap=lambda wc: _p("assignment", wc.combo, "operon_max_gap",
                                      config["integration"]["operon_max_gap"]),
+        # _p falls back to the production value on every other axis, so only the
+        # reproducibility combinations vary this.
+        min_reps=lambda wc: _p("reproducibility", wc.combo, "min_reps",
+                               config["integration"]["min_reps"]),
     log:
         os.path.join(LOG, "sens_assign_{axis}_{combo}_{strain}.log"),
     conda:
@@ -432,7 +443,7 @@ rule sens_chexmix:
 rule sens_summary_axis:
     """One row per combination, with every headline number recomputed."""
     wildcard_constraints:
-        axis="assignment|deg|orthology|fimo",   # meme and chexmix have their own rules
+        axis="assignment|reproducibility|deg|orthology|fimo",   # meme and chexmix have their own rules
     input:
         lambda wc: expand(
             os.path.join(SENS, wc.axis, "{combo}", "crossstrain_summary.tsv"),
@@ -526,7 +537,7 @@ rule sensitivity_cheap:
     """Seconds. Run this routinely."""
     input:
         expand(os.path.join(SENS, "{axis}", "summary.tsv"),
-               axis=[a for a in ("assignment", "deg", "orthology")
+               axis=[a for a in ("assignment", "reproducibility", "deg", "orthology")
                      if sens_combos(a)]),
 
 

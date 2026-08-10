@@ -1,8 +1,25 @@
 # --- data & results (never commit large sequencing data) ---------------------
 /data/
-/results/
 /resources/
 /logs/
+
+# Generated outputs. Four auto-generated reports are kept because the README
+# links to them; everything else is reproducible from the workflow.
+/results/*
+!/results/02_report/
+/results/02_report/*
+!/results/02_report/qc_scorecard.md
+!/results/11_sensitivity/
+/results/11_sensitivity/*
+!/results/11_sensitivity/SENSITIVITY_REPORT.md
+!/results/13_motifless/
+/results/13_motifless/*
+!/results/13_motifless/MOTIFLESS_REPORT.md
+!/results/10_igv/
+/results/10_igv/*
+!/results/10_igv/README.md
+
+# --- large or generated file types -------------------------------------------
 *.bam
 *.bam.bai
 *.bai
@@ -11,9 +28,14 @@
 *.bw
 *.zip
 *.log
-*.sh
-*.txt
 *backup*
+
+# Shell scripts in the repository root only (personal run wrappers).
+# Scripts under workflow/ are part of the pipeline and ARE tracked.
+/*.sh
+
+# NOTE: do NOT ignore *.txt globally. workflow/envs/locks/*.lock.txt are the
+# resolved conda environment specifications and must be committed.
 
 # --- Snakemake internals -----------------------------------------------------
 .snakemake/
@@ -30,6 +52,3 @@ __pycache__/
 *.pyc
 .Rhistory
 .RData
-
-# --- allow small example/test fixtures if you add them later -----------------
-!tests/**/*.bam
