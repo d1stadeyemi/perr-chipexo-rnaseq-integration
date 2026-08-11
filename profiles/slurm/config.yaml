@@ -1,15 +1,22 @@
 # =============================================================================
-# Snakemake 8 workflow profile for ISAAC-NG (UTK) — SLURM executor plugin
+# Snakemake workflow profile for SLURM clusters
 # =============================================================================
-# Launch with:  snakemake --workflow-profile profiles/isaac
-# Requires:  snakemake>=8, snakemake-executor-plugin-slurm, and --sdm conda
-#            (set below so you don't have to type it).
+# Launch with:  snakemake --workflow-profile profiles/slurm
+# Requires:     snakemake>=8 and snakemake-executor-plugin-slurm. Conda
+#               deployment is set below, so --sdm conda is not needed.
 #
-# EDIT the account / partition / qos to match YOUR allocation. The values below
-# mirror the condo allocation seen in your shell history:
-#   account=acf-utk0009  partition=condo-rmccord  qos=condo
-# For the general (non-condo) queue, use partition=campus (or short) and drop
-# the --qos line in slurm_extra.
+# THREE LINES MUST BE EDITED before this will run anywhere:
+#   default-resources.slurm_account     your allocation
+#   default-resources.slurm_partition   the queue to submit to
+#   default-resources.slurm_extra       any additional sbatch flags, or ""
+#
+# The per-rule overrides below are sized for a 2 Mb bacterial genome with
+# roughly 20 M reads per sample. They are starting points: a rule that runs out
+# of memory or time is telling you to raise its entry, not that the workflow is
+# broken.
+#
+# Developed on ISAAC-NG at the University of Tennessee, where the values were
+# account=acf-utk0009, partition=condo-rmccord, slurm_extra="'--qos=condo'".
 # =============================================================================
 
 executor: slurm
@@ -25,9 +32,9 @@ rerun-incomplete: true
 
 # --- resources applied to every rule unless overridden below -----------------
 default-resources:
-  slurm_account: "acf-utk0009"
-  slurm_partition: "condo-rmccord"
-  slurm_extra: "'--qos=condo'"
+  slurm_account: "YOUR_ACCOUNT"        # <-- edit
+  slurm_partition: "YOUR_PARTITION"    # <-- edit
+  slurm_extra: ""                      # <-- edit, e.g. "'--qos=normal'", or leave empty
   mem_mb: 8000
   runtime: 120                         # minutes
   cpus_per_task: 4

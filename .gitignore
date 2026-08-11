@@ -53,3 +53,19 @@ __pycache__/
 .Rhistory
 .RData
 *.bak
+
+# Keep the directory structure visible even when contents are ignored.
+!data/.gitkeep
+!resources/.gitkeep
+!results/.gitkeep
+!logs/.gitkeep
+
+# Selected figures are committed so the README can show what the workflow
+# produces. The rest of results/ remains ignored.
+!results/07_figures/
+results/07_figures/*
+!results/07_figures/A909_fig1_composition_volcano.png
+!results/07_figures/A909_fig2_binding_targets.png
+!results/07_figures/orthology_fig1_conservation.png
+!results/07_figures/orthology_fig2_core_concordance.png
+!results/07_figures/enrichment_distribution.png

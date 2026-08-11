@@ -12,6 +12,12 @@ This document describes the computational workflow. For the biology and the inte
 
 Two serotypes of *S. agalactiae* were profiled by ChIP-exo using a 6xHis-tagged PerR construct, with three immunoprecipitation replicates and one no-tag control each. This workflow integrates those data with matched RNA-seq from a ΔperR background to separate genes that PerR binds directly from genes that respond to its loss indirectly.
 
+That separation is the whole point of the integration, and it is what the pipeline outputs make visible. Differential expression alone identifies several hundred responsive genes; adding binding data shows that only a small minority of them carry a PerR site at their promoter.
+
+![Direct versus indirect regulon in A909](results/07_figures/A909_fig1_composition_volcano.png)
+
+*Produced by the `figures` stage from `results/06_integration/`. Points are differentially expressed genes; those with a PerR peak assigned to their promoter are highlighted.*
+
 | | |
 |---|---|
 | Organism | *Streptococcus agalactiae*, serotypes Ia (A909) and V (CJB111) |
@@ -163,7 +169,7 @@ snakemake -n --sdm conda --conda-frontend conda -c8 all
 A profile is provided for the ISAAC-NG cluster at the University of Tennessee. Copy it and edit the account, partition and QOS for your site:
 
 ```bash
-cp -r profiles/isaac profiles/mysite
+cp -r profiles/slurm profiles/mysite
 $EDITOR profiles/mysite/config.yaml
 snakemake --workflow-profile profiles/mysite all
 ```
@@ -178,7 +184,7 @@ cat results/11_sensitivity/SENSITIVITY_REPORT.md
 column -t -s $'\t' results/07_figures/regulon_gene_counts.tsv
 ```
 
-Every number reported in the publication is present in `results/`. The tables under `results/06_integration/` and `results/08_orthology/` are the primary outputs.
+Every number reported in the publication is present in `results/`. The tables under `results/06_integration/` and `results/08_orthology/` are the primary outputs, and `results/07_figures/` holds the figure panels regenerated from them. Five of those panels are committed to this repository so the README can show what the workflow produces; the rest are reproduced by the run.
 
 ### 9. Running individual stages
 
@@ -313,6 +319,12 @@ done
 | Parameter sensitivity | `sensitivity.smk` | `sensitivity_cheap` | Python |
 | Cross-caller concordance | `concordance.smk` | `concordance` | Python |
 | Motif-less peak analysis | `motifless.smk` | `motifless` | MEME-ChIP, SEA, TOMTOM |
+
+Stages 08 and 09 exist because the two serotypes were not sequenced to equal depth and were not prepared identically. Comparing them therefore requires establishing orthology first, then asking whether an apparent difference in binding reflects biology or detection sensitivity.
+
+![Cross-serotype conservation](results/07_figures/orthology_fig1_conservation.png)
+
+*Produced by the `figures` stage from `results/08_orthology/`. Conservation is reported on two independent axes, binding alone and binding combined with expression response, because collapsing them into one label conflates two different questions.*
 
 ---
 
