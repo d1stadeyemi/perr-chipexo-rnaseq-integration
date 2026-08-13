@@ -34,7 +34,7 @@ Everything downstream of the archive is derived automatically. Sample identities
 ## Repository structure
 
 ```
-perr_chipexo/
+perr-chipexo-rnaseq-integration/
 ├── config/
 │   ├── config.yaml              all parameters, fully commented
 │   └── samples_fastq.tsv.example  template for the optional FASTQ entry point
@@ -109,8 +109,8 @@ Close and reopen your terminal after `conda init`.
 ### 3. Clone the repository and create the Snakemake environment
 
 ```bash
-git clone https://github.com/d1stadeyemi/perr_chipexo.git
-cd perr_chipexo
+git clone https://github.com/d1stadeyemi/perr-chipexo-rnaseq-integration.git
+cd perr-chipexo-rnaseq-integration
 conda env create -f workflow/envs/snakemake.yaml
 conda activate snakemake
 snakemake --version        # expect 9.19.0
