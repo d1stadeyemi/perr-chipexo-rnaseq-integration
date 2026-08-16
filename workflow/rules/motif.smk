@@ -293,6 +293,8 @@ rule classify_peaks:
         fimo_gbs=os.path.join(MOTIF, "{strain}", "fimo_gbs", "fimo.tsv"),
     output:
         tsv=os.path.join(MOTIF, "{strain}", "{strain}.{peakset}.peak_classification.tsv"),
+    params:
+        halfwindow=config["motif"]["motif_in_peak_halfwindow"],
     log:
         os.path.join(RESULTS, "logs", "classify_{strain}_{peakset}.log"),
     conda:

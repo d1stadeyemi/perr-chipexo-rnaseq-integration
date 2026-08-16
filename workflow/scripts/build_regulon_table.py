@@ -104,11 +104,24 @@ ai = {c: i for i, c in enumerate(ahdr)}
 di = {c: i for i, c in enumerate(dhdr)}
 ginfo = parse_gff(gff)
 
+# Gene-name sources, in precedence order. GFF names are the official symbols;
+# the lab's DEG sheets annotate additional genes the GFF leaves unnamed, so they
+# fill the gaps. Display only -- nothing is classified or counted using them.
+gff_name = {lt: v.get("gene_name", "") for lt, v in ginfo.items()}
+rnaseq_name = {}
+
 rna = {}
 for r in drows:
     if len(r) <= max(di.values()):
         r = r + [""] * (max(di.values()) + 1 - len(r))
     rna[r[di["gene_id"]].strip()] = r
+
+for r in drows:
+    if "gene_name" in di and di["gene_name"] < len(r):
+        gid = r[di["gene_id"]].strip()
+        nm = r[di["gene_name"]].strip()
+        if nm:
+            rnaseq_name[gid] = nm
 
 # ---- which Per box drives DIRECT_PERBOX -----------------------------------
 GBS_COL, GAS_COL = "gbs_perbox_in_window", "perbox_in_window"
@@ -137,6 +150,11 @@ with open(out, "w") as ob:
     for r in arows:
         g = r[ai["gene_id"]]
         rr = rna.get(g)
+
+        # The assignment table already carries the GFF name. Fill it from the
+        # lab's DEG sheet only where the GFF left it blank.
+        if ai["gene_name"] < len(r) and not r[ai["gene_name"]]:
+            r[ai["gene_name"]] = rnaseq_name.get(g, "")
 
         def val(k):
             return rr[di[k]] if (rr and k in di and di[k] < len(rr)) else ""
@@ -172,7 +190,7 @@ with open(out, "w") as ob:
         row = [""] * len(ahdr)
         row[ai["strain"]] = strain
         row[ai["gene_id"]] = g
-        row[ai["gene_name"]] = gi.get("gene_name", "")
+        row[ai["gene_name"]] = gi.get("gene_name", "") or rnaseq_name.get(g, "")
         row[ai["product"]] = gi.get("product", "")
         row[ai["gene_strand"]] = gi.get("strand", "")
         row[ai["relationship"]] = "none"

@@ -6,9 +6,9 @@ Peaks carrying no GBS PerR motif (FIMO p<1e-4) were subjected to de novo discove
 
 ## A909
 
-55 motif-less of 99 peaks (56%)
+68 motif-less of 99 peaks (69%)
 
-### A909 — motifless (55 peaks)
+### A909 — motifless (68 peaks)
 
 *No motifs reported.*
 
@@ -16,73 +16,71 @@ Peaks carrying no GBS PerR motif (FIMO p<1e-4) were subjected to de novo discove
 
 *No known TF motif enriched in these sequences (SEA).*
 
-### A909 — motifpos (44 peaks)
+### A909 — motifpos (31 peaks)
 
 | consensus | width | sites | E-value | most similar |
 |---|---|---|---|---|
-| `STTATTTAKAA` | 11 | 44 | 9.5e-028 | 1 (CTTATTTAKAA-MEME-1) |
-| `ATTMTAAATAASN` | 13 | 39 | 6.0e-016 | 1 (CTTATTTAKAA-MEME-1) |
-| `TTWYTGATAMW` | 11 | 17 | 1.3e-005 | 1 (CTTATTTAKAA-MEME-1) |
-| `AGYAKACTG` | 9 | 11 | 2.4e-004 | 1 (CTTATTTAKAA-MEME-1) |
-| `AAATYCRR` | 8 | 9 | 1.2e-003 | 1 (CTTATTTAKAA-MEME-1) |
+| `STTATTTAKAA` | 11 | 31 | 5.1e-030 | 1 (CTTATTTAKAA-MEME-1) |
+| `TTATTTAGAAW` | 11 | 28 | 1.3e-014 | 1 (CTTATTTAKAA-MEME-1) |
+| `AAWAAAG` | 7 | 21 | 1.0e-005 | 1 (CTTATTTAKAA-MEME-1) |
+| `TTTCAAAATC` | 10 | 16 | 3.5e-004 | 1 (CTTATTTAKAA-MEME-1) |
+| `CWCCTW` | 6 | 10 | 4.1e-004 | 1 (CTTATTTAKAA-MEME-1) |
 
 **Database matches (558 curated prokaryotic motifs):**
 
 | query | target | q-value |
 |---|---|---|
-| 3 | EXPREG_00000290 | 0.0441 |
-| 3 | MX000256 | 0.224 |
-| 3 | EXPREG_00000130 | 0.246 |
-| 3 | MX000053 | 0.304 |
-| 3 | EXPREG_00000ec0 | 0.304 |
+| 2 | MX000211 | 0.172 |
+| 1 | MX000211 | 0.31 |
 
 *No known TF motif enriched in these sequences (SEA).*
 
 ## CJB111
 
-8 motif-less of 25 peaks (32%)
+12 motif-less of 25 peaks (48%)
 
-> **UNDERPOWERED.** 8 sequences is too few for reliable de novo discovery. MEME will return something; treat it as descriptive only.
+> **UNDERPOWERED.** 12 sequences is too few for reliable de novo discovery. MEME will return something; treat it as descriptive only.
 
 
-### CJB111 — motifless (8 peaks)
+### CJB111 — motifless (12 peaks)
 
 | consensus | width | sites | E-value | most similar |
 |---|---|---|---|---|
-| `ACYCCTTTA` | 9 | 7 | 7.0e-004 | 1 (CTTATTTAKAA-MEME-1) |
-| `AGCACGWAAWKNA` | 13 | 7 | 7.0e-004 | 1 (CTTATTTAKAA-MEME-1) |
-| `AGCTTATTTTT` | 11 | 7 | 7.0e-004 | 1 (CTTATTTAKAA-MEME-1) |
-| `ACTSTC` | 6 | 6 | 3.5e-003 | 1 (CTTATTTAKAA-MEME-1) |
-| `AAACDTTAATAT` | 12 | 4 | 3.8e-002 | 1 (CTTATTTAKAA-MEME-1) |
+| `AAADAARCT` | 9 | 11 | 4.8e-006 | 1 (CTTATTTAKAA-MEME-1) |
+| `ACGAHTTTGA` | 10 | 9 | 1.7e-004 | 1 (CTTATTTAKAA-MEME-1) |
+| `AGHAACWSTMAY` | 12 | 9 | 1.7e-004 | 1 (CTTATTTAKAA-MEME-1) |
+| `AAAATGCA` | 8 | 6 | 6.9e-003 | 1 (CTTATTTAKAA-MEME-1) |
+| `AAAGGAGT` | 8 | 6 | 6.9e-003 | 1 (CTTATTTAKAA-MEME-1) |
 
 **Database matches (558 curated prokaryotic motifs):**
 
 | query | target | q-value |
 |---|---|---|
-| 5 | LMO1727_Enterococcaceae_Listeriaceae | 0.187 |
-| 5 | ExuR_Bacilli_Clostridia | 0.187 |
+| 4 | MX000043 | 0.246 |
+| 4 | MX000224 | 0.355 |
+| 4 | MX000116 | 0.355 |
+| 4 | MX000255 | 0.411 |
 
 *No known TF motif enriched in these sequences (SEA).*
 
-### CJB111 — motifpos (17 peaks)
+### CJB111 — motifpos (13 peaks)
 
 | consensus | width | sites | E-value | most similar |
 |---|---|---|---|---|
-| `ATTCTAAATAAS` | 12 | 16 | 7.7e-009 | 1 (CTTATTTAKAA-MEME-1) |
-| `TTCTAAATAAS` | 11 | 16 | 8.4e-009 | 1 (CTTATTTAKAA-MEME-1) |
-| `AGAATGGT` | 8 | 11 | 3.9e-004 | 1 (CTTATTTAKAA-MEME-1) |
-| `CAAAAA` | 6 | 10 | 1.2e-003 | 1 (CTTATTTAKAA-MEME-1) |
-| `AGDGCTT` | 7 | 8 | 1.3e-003 | 1 (CTTATTTAKAA-MEME-1) |
+| `STTATTTAKAAT` | 12 | 13 | 2.0e-009 | 1 (CTTATTTAKAA-MEME-1) |
+| `ATTMTAAATAASDAAH` | 16 | 13 | 1.3e-006 | 1 (CTTATTTAKAA-MEME-1) |
+| `GCTTCAAT` | 8 | 9 | 2.3e-004 | 1 (CTTATTTAKAA-MEME-1) |
+| `CAAAAAAAWB` | 10 | 8 | 8.2e-004 | 1 (CTTATTTAKAA-MEME-1) |
+| `ACTTTC` | 6 | 7 | 2.6e-003 | 1 (CTTATTTAKAA-MEME-1) |
 
 **Database matches (558 curated prokaryotic motifs):**
 
 | query | target | q-value |
 |---|---|---|
-| 2 | MX000211 | 0.274 |
-| 4 | MX000341 | 0.38 |
-| 4 | MX000348 | 0.38 |
-| 6 | MX000312 | 0.41 |
-| 6 | EXPREG_00000bc0 | 0.41 |
+| 5 | MX000341 | 0.101 |
+| 5 | MX000348 | 0.101 |
+| 4 | MX000385 | 0.341 |
+| 4 | EXPREG_00000840 | 0.341 |
 
 *No known TF motif enriched in these sequences (SEA).*
 

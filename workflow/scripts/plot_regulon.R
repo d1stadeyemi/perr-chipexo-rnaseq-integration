@@ -104,6 +104,11 @@ for (i in seq_along(strains)) {
                              TRUE                        ~ "not bound"),
            class = factor(class, levels = c("not bound", "PerR-bound", "direct target")))
   lab <- v %>% filter(class == "direct target") %>%
+    # The RNA-seq table now carries its own gene_name, so joining another one in
+    # would produce gene_name.x / gene_name.y and break the mutate below. Drop
+    # any existing copy on the left first: the regulon table's name is the
+    # authoritative one (GFF symbol, with the lab's annotation filling gaps).
+    select(-any_of("gene_name")) %>%
     left_join(direct %>% select(gene_id, gene_name), by = "gene_id") %>%
     mutate(lab = ifelse(!is.na(gene_name) & nzchar(gene_name), gene_name, gene_id))
 
