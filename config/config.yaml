@@ -166,7 +166,14 @@ motif:
   gbs_pwm_strain: "A909"
   gbs_pwm_id: "1"
   bg_order: 1                     # fasta-get-markov Markov order (AT-rich genome)
-  window: 500                     # bp window centered on each ChExMix event Point
+  window: 500                     # sequence extracted per peak for DISCOVERY. It is a 500 bp window centered on each ChExMix event Point
+  # Maximum distance from the ChExMix event Point to the centre of a motif hit
+  # for that motif to count as being under the peak. ChExMix itself associates
+  # motif instances with binding events within 30 bp (Yamada et al. 2019), and
+  # MACE reports 90% of ChIP-exo motifs within 20 bp of the peak centre
+  # (Wang et al., NAR 2014). The measured median offset here is -2 bp.
+  # The 500 bp discovery window is far too generous for this purpose.
+  motif_in_peak_halfwindow: 30
   hiconf_min_reps: 3              # "hiconf" set = called in >= N replicates
   meme_mod: "zoops"               # zero-or-one occurrence per sequence
   meme_minw: 6                    # brackets the 15 bp Per box
