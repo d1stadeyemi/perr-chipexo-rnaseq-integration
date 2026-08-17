@@ -103,7 +103,10 @@ pA <- ggplot(dat, aes(dist, fill = strain)) +
            fill = PALE, alpha = .9) +
   geom_histogram(binwidth = 50, colour = "white", linewidth = .2, alpha = .85) +
   geom_vline(xintercept = 0, colour = INK, linewidth = .5) +
-  facet_wrap(~ strain, ncol = 1, scales = "free_y") +
+  ## Shared y-axis so the two strains are directly comparable. A909 has ~4x as
+  ## many peaks, so CJB111's bars are correspondingly short -- that difference
+  ## is real and should not be hidden by rescaling each panel to its own maximum.
+  facet_wrap(~ strain, ncol = 1) +
   scale_fill_manual(values = SCOL, guide = "none") +
   scale_x_continuous(breaks = pretty_breaks(8)) +
   labs(title = "A   Peak position relative to the nearest transcription start",

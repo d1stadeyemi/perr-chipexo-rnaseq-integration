@@ -135,6 +135,9 @@ rule metaprofile_figure:
         classification=expand(
             os.path.join(MOTIF, "{strain}", "{strain}.all.peak_classification.tsv"),
             strain=STRAINS),
+        repcodes=expand(
+            os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.replicationcodes.table"),
+            strain=STRAINS),
     output:
         pdf=os.path.join(FIGS, "metaprofile.pdf"),
         png=os.path.join(FIGS, "metaprofile.png"),
@@ -142,6 +145,7 @@ rule metaprofile_figure:
         strains=STRAINS,
         flank=config["figures"]["metaprofile_flank"],
         outdir=FIGS,
+        min_reps=config["figures"]["metaprofile_min_reps"],
     log:
         os.path.join(LOG, "metaprofile_figure.log"),
     conda:

@@ -261,6 +261,10 @@ figures:
   # is wide enough to show the footprint returning to background on both sides
   # without diluting it; the footprints measured here are 29-51 bp.
   metaprofile_flank: 150
+  # 1 = every called event. The footprint is visible even across the weakest
+  # calls, which is the more general statement. Set to 2 to match
+  # integration.min_reps for a cleaner but narrower profile.
+  metaprofile_min_reps: 2
 
 # -----------------------------------------------------------------------------
 # Orthologous-position signal test (results/09_pileup).

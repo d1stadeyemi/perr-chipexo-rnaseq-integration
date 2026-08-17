@@ -37,8 +37,14 @@ rev_bw = dict(zip(snakemake.params.strains, snakemake.input.rev))     # noqa: F8
 ctl_bw = dict(zip(snakemake.params.strains, snakemake.input.ctrl))    # noqa: F821
 events = dict(zip(snakemake.params.strains, snakemake.input.events))  # noqa: F821
 classif = dict(zip(snakemake.params.strains, snakemake.input.classification))  # noqa: F821
+repcodes = dict(zip(snakemake.params.strains, snakemake.input.repcodes))  # noqa: F821
 STRAINS = list(snakemake.params.strains)                              # noqa: F821
 FLANK = int(snakemake.params.flank)                                   # noqa: F821
+# Minimum replicate support for a peak to enter the profile. 1 includes every
+# called event, which makes this the most general statement about the assay:
+# the doublet is visible even across the weakest calls. Raising it to match
+# integration.min_reps gives a cleaner profile but a narrower claim.
+MIN_REPS = int(snakemake.params.min_reps)                             # noqa: F821
 outdir = snakemake.params.outdir                                      # noqa: F821
 logp = snakemake.log[0]                                               # noqa: F821
 
@@ -61,6 +67,17 @@ def read_points(path):
             out.append((m.group(1), int(m.group(2))))
     return out
 
+def read_repcodes(path):
+    """peak position -> number of replicates the event was called in."""
+    out = {}
+    for ln in open(path):
+        f = ln.rstrip("\n").split("\t")
+        if len(f) < 2 or not f[1].isdigit():
+            continue
+        m = re.match(r"^(?:chr)?(.+):(\d+)$", f[0])
+        if m:
+            out[int(m.group(2))] = int(f[1])
+    return out
 
 def read_motif_status(path):
     """peak position -> motif-positive, keyed the same way as the events file."""
@@ -106,9 +123,19 @@ fig = plt.figure(figsize=(13, 4.6 * len(STRAINS)))
 gs = fig.add_gridspec(len(STRAINS), 3, width_ratios=[1.25, 1.25, 1.0],
                       hspace=0.45, wspace=0.30)
 
+# Colourbars are axes too, so fig.get_axes() would include them in the styling
+# loop at the end and undo their own formatting. Track the panel axes instead.
+panels = []
+
 for r, S in enumerate(STRAINS):
     pts = read_points(events[S])
     mot = read_motif_status(classif[S])
+    if MIN_REPS > 1:
+        codes = read_repcodes(repcodes[S])
+        n_before = len(pts)
+        pts = [p for p in pts if codes.get(p[1], 0) >= MIN_REPS]
+        log.write(f"{S}: reproducibility filter min_reps={MIN_REPS}, "
+                  f"{n_before} -> {len(pts)} peaks\n")
     F = profile(fwd_bw[S], pts, FLANK)
     R = profile(rev_bw[S], pts, FLANK)
     C = profile(ctl_bw[S], pts, FLANK)
@@ -116,8 +143,13 @@ for r, S in enumerate(STRAINS):
 
     # ---- A: average profile, IP forward / reverse / control ----------------
     ax = fig.add_subplot(gs[r, 0])
+    panels.append(ax)
     ax.axvline(0, color=INK, lw=.6, zorder=1)
-    ax.fill_between(x, C.mean(0), color=GREY, alpha=.55, lw=0, label="no-tag control", zorder=2)
+    # A dashed line, not a filled area. Filled, a flat control reads as though
+    # it dominates the IP, when the IP's genome-wide background is genuinely
+    # lower: ~27% of IP reads sit in peaks and are therefore absent from the
+    # background, while the control's reads are spread uniformly.
+    ax.plot(x, C.mean(0), color=GREY, lw=1.1, ls="--", label="no-tag control", zorder=2)
     ax.plot(x, F.mean(0), color="#0E5A8A", lw=1.6, label="IP forward 5\u2032", zorder=3)
     ax.plot(x, R.mean(0), color=RUST, lw=1.6, label="IP reverse 5\u2032", zorder=3)
     fmax, rmax = x[F.mean(0).argmax()], x[R.mean(0).argmax()]
@@ -135,6 +167,7 @@ for r, S in enumerate(STRAINS):
 
     # ---- B: split by motif status -----------------------------------------
     ax = fig.add_subplot(gs[r, 1])
+    panels.append(ax)
     ax.axvline(0, color=INK, lw=.6)
     idx_pos = [i for i, (_, p) in enumerate(pts) if mot.get(p, False)]
     idx_neg = [i for i, (_, p) in enumerate(pts) if not mot.get(p, False)]
@@ -152,19 +185,24 @@ for r, S in enumerate(STRAINS):
 
     # ---- C: per-peak heatmap ----------------------------------------------
     ax = fig.add_subplot(gs[r, 2])
+    panels.append(ax)
     M = F + R
     if M.shape[0]:
         order = np.argsort(-M.sum(1))
         vmax = np.percentile(M, 99) or 1
-        ax.imshow(M[order], aspect="auto", cmap=CMAP, vmin=0, vmax=vmax,
-                  extent=[-FLANK, FLANK, M.shape[0], 0], interpolation="nearest")
+        im = ax.imshow(M[order], aspect="auto", cmap=CMAP, vmin=0, vmax=vmax,
+                       extent=[-FLANK, FLANK, M.shape[0], 0], interpolation="nearest")
+        cb = fig.colorbar(im, ax=ax, fraction=.035, pad=.02)
+        cb.set_label("5\u2032 end signal (CPM)", fontsize=8, color=INK)
+        cb.ax.tick_params(labelsize=7.5, colors=INK)
+        cb.outline.set_visible(False)
     ax.axvline(0, color=INK, lw=.6)
     ax.set_title(f"{S}   every peak, sorted by signal", fontsize=11, color=INK,
                  fontweight="bold", loc="left")
     ax.set_xlabel("distance from crosslink (bp)", fontsize=9.5, color=INK)
     ax.set_ylabel("binding events", fontsize=9.5, color=INK)
 
-for ax in fig.get_axes():
+for ax in panels:
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     for sp in ("left", "bottom"):
