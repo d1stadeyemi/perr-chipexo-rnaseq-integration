@@ -1,0 +1,11 @@
+# Metaprofile figure only. Kept separate from pileup.yaml so that adding a
+# plotting library does not invalidate the orthologous-position analysis.
+name: perr-metaprofile
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  - pybigwig
+  - numpy
+  - matplotlib-base

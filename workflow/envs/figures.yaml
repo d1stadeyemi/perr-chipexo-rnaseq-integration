@@ -11,4 +11,5 @@ dependencies:
   - r-forcats
   - r-ggseqlogo      
   - r-scales         
-  - r-stringr        
+  - r-stringr       
+  - r-eulerr  

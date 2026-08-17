@@ -21,12 +21,23 @@ suppressPackageStartupMessages({
   library(ggplot2); library(dplyr); library(tidyr); library(patchwork); library(forcats)
 })
 
-ROOT   <- "."
-PEAKS  <- file.path(ROOT, "results", "03_peaks")
-OUTDIR <- file.path(ROOT, "results", "07_figures")
+## Paths come from the rule, not from hard-coded strings: PEAKS moved under a
+## per-caller subdirectory (03_peaks/chexmix/) when a second caller was added,
+## and a hard-coded path would have silently read a stale tree.
+events_files <- unlist(snakemake@input[["events"]])
+repcode_files <- unlist(snakemake@input[["repcodes"]])
+STRAINS <- unlist(snakemake@params[["strains"]])
+OUTDIR <- snakemake@params[["outdir"]]
+logp <- snakemake@log[[1]]
 dir.create(OUTDIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(dirname(logp), recursive = TRUE, showWarnings = FALSE)
 
-STRAINS <- c("A909", "CJB111")
+lg <- file(logp, open = "wt")
+sink(lg, type = "message")
+on.exit({sink(type = "message"); close(lg)}, add = TRUE)
+
+names(events_files) <- STRAINS
+names(repcode_files) <- STRAINS
 
 # theme matching the project's other figures ---------------------------------
 INK <- "#1F2933"; TEAL <- "#0E6E6B"; RUST <- "#A8471C"
@@ -48,7 +59,7 @@ theme_perr <- function(base = 11) {
 # so it is located BY NAME rather than by position.
 # ---------------------------------------------------------------------------
 read_events <- function(strain) {
-  path <- file.path(PEAKS, strain, paste0(strain, ".events"))
+  path <- events_files[[strain]]
   ln   <- readLines(path, warn = FALSE)
 
   hdr_line <- grep("^#Point", ln, value = TRUE)
@@ -81,7 +92,7 @@ read_events <- function(strain) {
 # when the code looks like a per-replicate string.
 # ---------------------------------------------------------------------------
 read_repcodes <- function(strain) {
-  path <- file.path(PEAKS, strain, paste0(strain, ".replicationcodes.table"))
+  path <- repcode_files[[strain]]
   if (!file.exists(path)) {
     warning("missing ", path); return(NULL)
   }

@@ -256,6 +256,12 @@ motifless:
   # 8 sequences will return something, and it will not mean anything.
   min_seqs: 20
 
+figures:
+  # Half-width of the window around each crosslink for the metaprofile. 150 bp
+  # is wide enough to show the footprint returning to background on both sides
+  # without diluting it; the footprints measured here are 29-51 bp.
+  metaprofile_flank: 150
+
 # -----------------------------------------------------------------------------
 # Orthologous-position signal test (results/09_pileup).
 # Depth-matching removed SEQUENCING DEPTH as the explanation for A909 85 bound
