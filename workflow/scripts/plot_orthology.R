@@ -91,14 +91,15 @@ p1 <- ggplot(cnt, aes(cons_lab, n, fill = cons_lab)) +
   scale_y_continuous(expand = expansion(mult = c(0, .16))) +
   labs(title = "Conservation of the PerR regulon",
        subtitle = paste0("1:1 orthologue pairs (RBH), plus genes with no ",
-                         "orthologue. Strain-specific classes are confounded ",
+                         "orthologue.\nStrain-specific classes are confounded ",
                          "with sensitivity."),
        x = NULL, y = "orthologue pairs") +
   theme_perr()
 
 ## P2: cross-strain expression scatter
 sc <- xs %>% filter(!is.na(.data[[fa]]), !is.na(.data[[fb]]))
-lab_sc <- sc %>% filter(conservation == "SHARED_DIRECT") %>%
+lab_sc <- sc %>% filter(conservation == "SHARED_DIRECT",
+                        abs(.data[[fa]]) > 0.9) %>%
   mutate(lab = ifelse(!is.na(gene_name) & nzchar(gene_name), gene_name,
                       .data[[paste0(sa, "_gene")]]))
 ## perR itself sits at roughly (-10, -9.5) while every other point is inside
@@ -125,6 +126,8 @@ p2 <- ggplot(sc, aes(.data[[fa]], .data[[fb]])) +
                            segment.colour = "#D8DEE3") +
   scale_colour_manual(values = PAL) +
   scale_size_manual(values = c(`FALSE` = 1.3, `TRUE` = 2.8), guide = "none") +
+  scale_x_continuous(expand = expansion(mult = .08)) +
+  scale_y_continuous(expand = expansion(mult = .08)) +
   labs(title = "Expression response across serotypes",
        subtitle = sprintf(
          "Pearson r = %.3f, Spearman rho = %.3f (n = %d, perR excluded); dashed line = identity",
@@ -150,10 +153,12 @@ BPAL[paste0("Bound ", sb, " only")] <- "#8C6BB1"
 ## Restrict to genes present in BOTH proteomes. A gene with no orthologue
 ## cannot be "bound in both", so including it would inflate the strain-specific
 ## bars with a gene-CONTENT difference rather than a BINDING difference.
+## No orthologue filter here: crossstrain_regulon.py already applies the
+## orthologue and biotype rules, and crossstrain_summary.tsv reports the result.
+## Re-filtering would give this panel a different value for the same quantity
+## from the one every other output quotes.
 bcnt <- xs %>%
-  filter(binding != "BOUND_NEITHER",
-         nzchar(.data[[paste0(sa, "_gene")]]),
-         nzchar(.data[[paste0(sb, "_gene")]])) %>%
+  filter(binding != "BOUND_NEITHER") %>%
   mutate(bind_lab = ifelse(binding %in% names(bind_lab),
                            bind_lab[binding], binding)) %>%
   count(bind_lab, name = "n") %>% arrange(n) %>%
@@ -258,6 +263,7 @@ writeLines(sprintf("bound in both strains: %d",
                    sum(xs$binding == "BOUND_BOTH")), lg)
 writeLines(sprintf("no-orthologue rows (accessory genome): %d",
                    sum(grepl("^NO_ORTHOLOG", xs$conservation))), lg)
+writeLines(sprintf("orthologue pairs below 90%% identity (flagged for review): see orthologs_rbh.tsv"), lg)
 writeLines(sprintf("non-coding rows (no protein, RBH impossible): %d",
                    sum(grepl("^NO_PROTEIN", xs$conservation))), lg)
 close(lg)

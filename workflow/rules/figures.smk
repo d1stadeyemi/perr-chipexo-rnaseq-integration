@@ -102,6 +102,7 @@ rule conservation_euler_figure:
     strain-specific region is confounded by the declared half-slurry prep."""
     input:
         cross=os.path.join(ORTH, "crossstrain_regulon.tsv"),
+        summary=os.path.join(ORTH, "crossstrain_summary.tsv"),
     output:
         pdf=os.path.join(FIGS, "conservation_euler.pdf"),
         png=os.path.join(FIGS, "conservation_euler.png"),

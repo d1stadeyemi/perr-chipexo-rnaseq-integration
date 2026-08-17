@@ -17,6 +17,7 @@ suppressPackageStartupMessages({
 })
 
 cross   <- snakemake@input[["cross"]]
+summ    <- snakemake@input[["summary"]]
 outdir  <- snakemake@params[["outdir"]]
 strains <- unlist(snakemake@params[["strains"]])
 logp    <- snakemake@log[[1]]
@@ -29,23 +30,22 @@ on.exit({sink(type = "message"); close(lg)}, add = TRUE)
 INK <- "#1F2933"; TEAL <- "#0E6E6B"; RUST <- "#A8471C"; MUTE <- "#6B7A8A"
 A <- strains[1]; B <- strains[2]
 
-d <- suppressMessages(read_tsv(cross, show_col_types = FALSE))
-is_bound  <- function(x) !is.na(x) & grepl("^(DIRECT|BOUND)", x)
-is_direct <- function(x) !is.na(x) & grepl("^DIRECT", x)
-
-ca <- d[[grep(paste0("^", A, ".*class"), names(d))[1]]]
-cb <- d[[grep(paste0("^", B, ".*class"), names(d))[1]]]
-if (is.null(ca) || is.null(cb)) {
-  ca <- d[[5]]; cb <- d[[6]]
-  message("NOTE: classification columns located positionally (5,6); check the header")
+## Read the categories the pipeline already assigned rather than recomputing
+## them. crossstrain_regulon.py applies the orthologue and biotype rules that a
+## naive startsWith() on the classification columns would miss, and the two
+## must not be allowed to disagree.
+s <- suppressMessages(read_tsv(summ, show_col_types = FALSE))
+gv <- function(cat) {
+  v <- s$n[s$category == cat]
+  if (!length(v)) stop("category '", cat, "' not in ", summ)
+  as.integer(v[1])
 }
-
-bind <- c(setNames(sum( is_bound(ca) & !is_bound(cb)), A),
-          setNames(sum(!is_bound(ca) &  is_bound(cb)), B),
-          setNames(sum( is_bound(ca) &  is_bound(cb)), paste(A, B, sep = "&")))
-dirc <- c(setNames(sum( is_direct(ca) & !is_direct(cb)), A),
-          setNames(sum(!is_direct(ca) &  is_direct(cb)), B),
-          setNames(sum( is_direct(ca) &  is_direct(cb)), paste(A, B, sep = "&")))
+bind <- c(setNames(gv(paste0("BOUND_", A)), A),
+          setNames(gv(paste0("BOUND_", B)), B),
+          setNames(gv("BOUND_BOTH"), paste(A, B, sep = "&")))
+dirc <- c(setNames(gv(paste0(A, "_ONLY_DIRECT")), A),
+          setNames(gv(paste0(B, "_ONLY_DIRECT")), B),
+          setNames(gv("SHARED_DIRECT"), paste(A, B, sep = "&")))
 message("binding : ", paste(names(bind), bind, collapse = "  "))
 message("regulon : ", paste(names(dirc), dirc, collapse = "  "))
 
