@@ -1,22 +1,20 @@
 ## =============================================================================
 ## plot_motif_evidence.R -- the sequence evidence for the GBS PerR motif
 ## =============================================================================
-## Four panels answering four separate questions, none of which depends on a
-## per-site FIMO q-value (those run 0.6-1.0 for a genome-wide 11-mer scan and
-## must never be quoted):
+## Writes FOUR SEPARATE figures (no combined panel, no titles), sized for
+## publication. Panel letters and captions are added in the figure layout.
 ##
-##   A  what does the motif look like            -> sequence logo from the PWM
-##   B  is it AT the crosslink or merely nearby   -> offset distribution
-##   C  does it beat the S. pyogenes consensus    -> like-for-like peak counts
-##   D  does motif presence predict binding       -> genome-wide vs under peaks
+##   motif_logo        what does the motif look like      -> sequence logo
+##   motif_position    is it at the binding event          -> offset distribution,
+##                                                            GBS motif vs GAS box
+##   motif_gbs_vs_gas  like-for-like event counts          -> GBS motif vs GAS box
+##   motif_occupancy   does motif presence predict binding -> genome-wide vs bound
 ##
-## Panel B is the strongest evidence in the study: a median offset of ~0 bp
-## cannot arise from a scanning artefact.
-## Panel D is the argument for why ChIP-exo was necessary rather than a scan.
+## Each is written as .pdf (vector, for the paper) and .png (300 dpi, for slides).
 ## =============================================================================
 suppressPackageStartupMessages({
   library(ggplot2); library(dplyr); library(readr); library(tidyr)
-  library(patchwork); library(ggseqlogo); library(scales)
+  library(ggseqlogo); library(scales)
 })
 
 class_files <- unlist(snakemake@input[["classification"]])
@@ -32,25 +30,43 @@ names(class_files) <- STRAINS; names(fimo_gbs) <- STRAINS; names(fimo_gas) <- ST
 dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
 dir.create(dirname(logp), recursive = TRUE, showWarnings = FALSE)
 lg <- file(logp, open = "wt"); sink(lg, type = "message")
-on.exit({sink(type = "message"); close(lg)}, add = TRUE)
+
+## ===========================================================================
+## FONT AND SIZE CONTROLS -- change these to resize everything
+## ===========================================================================
+BASE_SIZE  <- 22    # tick labels, legend text
+TITLE_SIZE <- 24    # axis titles and strain (facet) labels
+BAR_LABEL  <- 7     # numbers printed on bars (mm; 7 is about 20 pt)
+FIG_W      <- 8     # default width of each saved figure (inches)
+FIG_H      <- 6.5   # default height of each saved figure (inches)
+## ===========================================================================
 
 INK <- "#1F2933"; TEAL <- "#0E6E6B"; RUST <- "#A8471C"
-MUTE <- "#6B7A8A"; GREY <- "#B4BEC7"; PALE <- "#EDF1F3"
-SCOL <- c(A909 = RUST, CJB111 = TEAL)
+GREY <- "#B4BEC7"; BLUE <- "#606064"; PALE <- "#EDF1F3"
+MCOL <- c("GBS motif" = RUST, "GAS Per box" = BLUE)
 
-theme_perr <- function(base = 11) {
-  theme_minimal(base_size = base) +
+theme_pub <- function() {
+  theme_minimal(base_size = BASE_SIZE) +
     theme(panel.grid.minor = element_blank(),
-          panel.grid.major = element_line(colour = PALE, linewidth = .3),
-          axis.text = element_text(colour = INK), axis.title = element_text(colour = INK),
-          plot.title = element_text(colour = INK, face = "bold", hjust = 0, size = 12),
-          plot.subtitle = element_text(colour = MUTE, size = 8.5, hjust = 0),
+          panel.grid.major = element_line(colour = PALE, linewidth = .4),
+          text        = element_text(colour = INK, face = "bold"),
+          axis.text   = element_text(colour = INK, face = "bold", size = BASE_SIZE),
+          axis.title  = element_text(colour = INK, face = "bold", size = TITLE_SIZE),
+          strip.text  = element_text(colour = INK, face = "bold", size = TITLE_SIZE),
+          legend.text = element_text(colour = INK, face = "bold", size = BASE_SIZE),
           legend.position = "bottom", legend.title = element_blank(),
-          plot.margin = margin(8, 12, 8, 8))
+          legend.key.size = unit(1, "cm"),
+          plot.margin = margin(12, 16, 12, 12))
+}
+
+save_fig <- function(p, stem, w = FIG_W, h = FIG_H) {
+  ggsave(file.path(outdir, paste0(stem, ".pdf")), p, width = w, height = h)
+  ggsave(file.path(outdir, paste0(stem, ".png")), p, width = w, height = h, dpi = 300)
+  message("wrote ", stem)
 }
 
 ## ---------------------------------------------------------------------------
-## PANEL A -- sequence logo, read straight from the MEME PWM that FIMO scanned
+## 1. sequence logo, read straight from the MEME PWM that FIMO scanned
 ## ---------------------------------------------------------------------------
 read_meme_pwm <- function(path) {
   ln <- readLines(path, warn = FALSE)
@@ -62,125 +78,130 @@ read_meme_pwm <- function(path) {
   t(structure(m, dimnames = list(NULL, c("A", "C", "G", "T"))))
 }
 pwm <- read_meme_pwm(pwm_file)
-consensus <- paste(c("A","C","G","T")[apply(pwm, 2, which.max)], collapse = "")
-message("PWM width ", ncol(pwm), "  majority consensus ", consensus)
+message("PWM width ", ncol(pwm), "  majority consensus ",
+        paste(c("A","C","G","T")[apply(pwm, 2, which.max)], collapse = ""))
 
-pA <- ggseqlogo(pwm, method = "bits") +
-  labs(title = "A   The GBS PerR motif",
-       subtitle = paste0("de novo, MEME; ", ncol(pwm),
-                         " bp; one matrix scans both genomes"),
-       x = "position", y = "bits") +
-  theme_perr() + theme(legend.position = "none")
+p_logo <- ggseqlogo(pwm, method = "bits") +
+  labs(x = "Position", y = "Bits") +
+  theme_pub() + theme(legend.position = "none")
+save_fig(p_logo, "motif_logo", w = 8, h = 4.5)
 
 ## ---------------------------------------------------------------------------
-## PANEL B -- offset from the crosslink
-## Every hit in the 500 bp discovery window is plotted, not only those that
-## passed the distance filter, so the filter's effect is visible rather than
-## assumed. A scanning artefact would be flat across the window.
+## 2. position relative to the binding event: GBS motif vs GAS Per box
+## For each event, the best-scoring (lowest p) hit of each motif inside the
+## event's discovery window is used. The same rule is applied to both motifs,
+## so the two distributions are directly comparable.
 ## ---------------------------------------------------------------------------
+read_fimo_hits <- function(path) {
+  f <- suppressMessages(read_tsv(path, comment = "#", show_col_types = FALSE))
+  f <- f[!is.na(f$start), ]
+  tibble(chrom  = sub("^chr", "", f$sequence_name),
+         centre = (f$start + f$stop) / 2,
+         p      = f$`p-value`)
+}
+
+best_offsets <- function(cls, hits, label, strain) {
+  cls <- cls |>
+    mutate(chrom = sub("^chr", "", chrom),
+           point = suppressWarnings(as.numeric(sub(".*_", "", peak))))
+  out <- lapply(seq_len(nrow(cls)), function(k) {
+    h <- hits[hits$chrom == cls$chrom[k] &
+              hits$centre >= cls$window_start[k] &
+              hits$centre <= cls$window_end[k], ]
+    if (nrow(h) == 0) return(NULL)
+    tibble(offset = h$centre[which.min(h$p)] - cls$point[k])
+  })
+  bind_rows(out) |> mutate(motif = label, strain = strain)
+}
+
 off <- bind_rows(lapply(STRAINS, function(s) {
-  d <- suppressMessages(read_tsv(class_files[[s]], show_col_types = FALSE))
-  tibble(strain = s,
-         offset = suppressWarnings(as.numeric(d$gbs_best_offset))) |>
-    filter(!is.na(offset))
-}))
-med <- off |> group_by(strain) |> summarise(m = median(offset), n = n(), .groups = "drop")
-for (k in seq_len(nrow(med)))
-  message(sprintf("%s: %d motif hits in window, median offset %+d bp",
-                  med$strain[k], med$n[k], as.integer(med$m[k])))
+  cls <- suppressMessages(read_tsv(class_files[[s]], show_col_types = FALSE))
+  bind_rows(best_offsets(cls, read_fimo_hits(fimo_gbs[[s]]), "GBS motif",   s),
+            best_offsets(cls, read_fimo_hits(fimo_gas[[s]]), "GAS Per box", s))
+})) |>
+  mutate(motif = factor(motif, levels = c("GBS motif", "GAS Per box")))
 
-pB <- ggplot(off, aes(offset, fill = strain)) +
-  annotate("rect", xmin = -HALFWIN, xmax = HALFWIN, ymin = -Inf, ymax = Inf,
-           fill = PALE, alpha = .9) +
-  geom_histogram(binwidth = 10, colour = "white", linewidth = .2, alpha = .85) +
-  geom_vline(xintercept = 0, colour = INK, linewidth = .4) +
-  geom_vline(data = med, aes(xintercept = m, colour = strain),
-             linetype = "dashed", linewidth = .6, show.legend = FALSE) +
-  facet_wrap(~ strain, ncol = 1, scales = "free_y") +
-  scale_fill_manual(values = SCOL, guide = "none") +
-  scale_colour_manual(values = SCOL, guide = "none") +
-  scale_x_continuous(breaks = pretty_breaks(6)) +
-  labs(title = "B   The motif sits ON the crosslink",
-       subtitle = paste0("shaded = the +/-", HALFWIN,
-                         " bp window used to call a peak motif-positive;",
-                         "  dashed = median"),
-       x = "motif centre relative to the ChExMix crosslink (bp)",
-       y = "motif hits") +
-  theme_perr()
+med <- off |> filter(motif == "GBS motif") |>
+  group_by(strain) |> summarise(m = median(offset), n = n(), .groups = "drop")
+for (k in seq_len(nrow(med)))
+  message(sprintf("%s: GBS hits in window %d, median offset %+d bp",
+                  med$strain[k], med$n[k], as.integer(med$m[k])))
+gas_n <- off |> filter(motif == "GAS Per box") |> count(strain)
+message("GAS hits in window: ",
+        paste(sprintf("%s %d", gas_n$strain, gas_n$n), collapse = " | "))
+
+for (s in STRAINS) {
+  d  <- off |> filter(strain == s)
+  ms <- med |> filter(strain == s)
+  p_pos <- ggplot(d, aes(offset, fill = motif)) +
+    annotate("rect", xmin = -HALFWIN, xmax = HALFWIN, ymin = -Inf, ymax = Inf,
+             fill = PALE, alpha = .9) +
+    geom_histogram(binwidth = 10, colour = "white", linewidth = .2,
+                   position = "identity", alpha = .9) +
+    geom_vline(xintercept = 0, colour = INK, linewidth = .6) +
+    geom_vline(data = ms, aes(xintercept = m), colour = RUST,
+               linetype = "dashed", linewidth = .9) +
+    scale_fill_manual(values = MCOL) +
+    scale_x_continuous(breaks = pretty_breaks(5)) +
+    scale_y_continuous(breaks = function(l) unique(floor(pretty(c(0, l[2]), 4)))) +
+    labs(x = "Distance from binding event centre (bp)",
+         y = "Motif occurrences") +
+    theme_pub()
+  save_fig(p_pos, paste0("motif_position_", s), w = 9, h = 5.5)
+}
 
 ## ---------------------------------------------------------------------------
-## PANEL C -- GAS box vs GBS motif, judged by the identical rule
-## Both scans use the same threshold, the same background and the same distance
-## cutoff, so the comparison is like for like.
+## 3. events containing each motif, judged by the identical rule
 ## ---------------------------------------------------------------------------
 cmp <- bind_rows(lapply(STRAINS, function(s) {
   d <- suppressMessages(read_tsv(class_files[[s]], show_col_types = FALSE))
   tibble(strain = s, n_peaks = nrow(d),
-         GBS = sum(d$gbs_perbox_in_window == TRUE, na.rm = TRUE),
-         GAS = sum(d$perbox_in_window     == TRUE, na.rm = TRUE))
+         `GBS motif`   = sum(d$gbs_perbox_in_window == TRUE, na.rm = TRUE),
+         `GAS Per box` = sum(d$perbox_in_window     == TRUE, na.rm = TRUE))
 })) |>
-  pivot_longer(c(GBS, GAS), names_to = "motif", values_to = "n") |>
+  pivot_longer(c(`GBS motif`, `GAS Per box`), names_to = "motif", values_to = "n") |>
   mutate(pct = 100 * n / n_peaks,
-         motif = factor(motif, levels = c("GAS", "GBS"),
-                        labels = c("S. pyogenes Per box", "GBS de novo motif")))
-message("peaks with motif: ", paste(sprintf("%s %s %d/%d", cmp$strain, cmp$motif,
-                                            cmp$n, cmp$n_peaks), collapse = " | "))
+         motif = factor(motif, levels = c("GBS motif", "GAS Per box")))
+message("events with motif: ", paste(sprintf("%s %s %d/%d", cmp$strain, cmp$motif,
+                                             cmp$n, cmp$n_peaks), collapse = " | "))
 
-pC <- ggplot(cmp, aes(strain, pct, fill = motif)) +
-  geom_col(position = position_dodge(width = .75), width = .62) +
+p_cmp <- ggplot(cmp, aes(strain, pct, fill = motif)) +
+  geom_col(position = position_dodge(width = .78), width = .66) +
   geom_text(aes(label = sprintf("%d/%d", n, n_peaks)),
-            position = position_dodge(width = .75), vjust = -0.4,
-            size = 3, colour = INK) +
-  scale_fill_manual(values = c("S. pyogenes Per box" = GREY,
-                               "GBS de novo motif" = RUST)) +
-  scale_y_continuous(expand = expansion(mult = c(0, .18)),
+            position = position_dodge(width = .78), vjust = -0.4,
+            size = BAR_LABEL, fontface = "bold", colour = INK) +
+  scale_fill_manual(values = MCOL) +
+  scale_y_continuous(expand = expansion(mult = c(0, .2)),
                      labels = function(x) paste0(x, "%")) +
-  labs(title = "C   The GBS motif explains binding; the GAS box does not",
-       subtitle = "same FIMO threshold, same background, same distance rule",
-       x = NULL, y = "peaks containing the motif") +
-  theme_perr()
+  labs(x = NULL, y = "Binding events with motif") +
+  theme_pub()
+save_fig(p_cmp, "motif_gbs_vs_gas")
 
 ## ---------------------------------------------------------------------------
-## PANEL D -- occupancy
-## Most genome-wide motif occurrences are NOT bound. This is the reason binding
-## data was needed rather than a consensus scan.
+## 4. genome-wide occurrences: bound vs not bound
 ## ---------------------------------------------------------------------------
 occ <- bind_rows(lapply(STRAINS, function(s) {
   gw <- suppressMessages(read_tsv(fimo_gbs[[s]], comment = "#", show_col_types = FALSE))
   gw <- gw[!is.na(gw$start), ]
   d  <- suppressMessages(read_tsv(class_files[[s]], show_col_types = FALSE))
   bound <- sum(d$gbs_perbox_in_window == TRUE, na.rm = TRUE)
-  tibble(strain = s,
-         state = c("under a peak", "not bound"),
+  tibble(strain = s, state = c("Bound", "Not bound"),
          n = c(bound, nrow(gw) - bound))
 })) |>
-  mutate(state = factor(state, levels = c("not bound", "under a peak")))
+  mutate(state = factor(state, levels = c("Not bound", "Bound")))
 tot <- occ |> group_by(strain) |> summarise(t = sum(n), .groups = "drop")
 message("occupancy: ", paste(sprintf("%s %d/%d bound",
-        occ$strain[occ$state == "under a peak"],
-        occ$n[occ$state == "under a peak"], tot$t), collapse = " | "))
+        occ$strain[occ$state == "Bound"], occ$n[occ$state == "Bound"], tot$t),
+        collapse = " | "))
 
-pD <- ggplot(occ, aes(strain, n, fill = state)) +
+p_occ <- ggplot(occ, aes(strain, n, fill = state)) +
   geom_col(width = .62) +
-  geom_text(data = occ |> filter(state == "under a peak"),
-            aes(label = sprintf("%d bound", n)), vjust = 1.6,
-            size = 3, colour = "white") +
-  geom_text(data = tot, aes(strain, t, label = sprintf("%d motif sites", t)),
-            inherit.aes = FALSE, vjust = -0.5, size = 3, colour = INK) +
-  scale_fill_manual(values = c("not bound" = GREY, "under a peak" = TEAL)) +
+  geom_text(data = tot, aes(strain, t, label = t), inherit.aes = FALSE,
+            vjust = -0.4, size = BAR_LABEL, fontface = "bold", colour = INK) +
+  scale_fill_manual(values = c("Not bound" = GREY, "Bound" = TEAL)) +
   scale_y_continuous(expand = expansion(mult = c(0, .15))) +
-  labs(title = "D   Most motif occurrences are not bound",
-       subtitle = "a consensus scan predicts far more sites than PerR occupies",
-       x = NULL, y = "genome-wide motif occurrences") +
-  theme_perr()
+  labs(x = NULL, y = "Genome-wide motif occurrences") +
+  theme_pub()
+save_fig(p_occ, "motif_occupancy")
 
-fig <- (pA | pB) / (pC | pD) +
-  plot_annotation(
-    title = "Sequence evidence for the GBS PerR binding motif",
-    subtitle = "Discovered de novo in both serotypes; distinct from the S. pyogenes Per box",
-    theme = theme(plot.title = element_text(face = "bold", size = 15, colour = INK),
-                  plot.subtitle = element_text(colour = MUTE, size = 10)))
-
-ggsave(file.path(outdir, "motif_evidence.pdf"), fig, width = 12, height = 9)
-ggsave(file.path(outdir, "motif_evidence.png"), fig, width = 12, height = 9, dpi = 300)
-message("wrote motif_evidence.pdf")
+sink(type = "message"); close(lg)

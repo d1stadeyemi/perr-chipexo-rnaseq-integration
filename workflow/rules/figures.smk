@@ -56,8 +56,9 @@ rule motif_evidence_figure:
         fimo_gas=expand(os.path.join(MOTIF, "{strain}", "fimo", "fimo.tsv"),
                         strain=STRAINS),
     output:
-        pdf=os.path.join(FIGS, "motif_evidence.pdf"),
-        png=os.path.join(FIGS, "motif_evidence.png"),
+        expand(os.path.join(FIGS, "{fig}.{ext}"),
+               fig=["motif_logo", "motif_position_A909", "motif_position_CJB111", "motif_gbs_vs_gas", "motif_occupancy"],
+               ext=["pdf", "png"]),
     params:
         strains=STRAINS,
         halfwindow=config["motif"]["motif_in_peak_halfwindow"],
@@ -140,8 +141,8 @@ rule metaprofile_figure:
             os.path.join(PEAKS_CHEXMIX, "{strain}", "{strain}.replicationcodes.table"),
             strain=STRAINS),
     output:
-        pdf=os.path.join(FIGS, "metaprofile.pdf"),
-        png=os.path.join(FIGS, "metaprofile.png"),
+        expand(os.path.join(FIGS, "metaprofile_{kind}_{strain}.{ext}"),
+               kind=["footprint", "motif", "heatmap"], strain=STRAINS, ext=["pdf", "png"]),
     params:
         strains=STRAINS,
         flank=config["figures"]["metaprofile_flank"],

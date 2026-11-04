@@ -28,6 +28,12 @@
 *.bw
 *.zip
 *.log
+*.bed
+*.bedgraph
+*.bigwig
+*.wig
+*.pdf
+*.png
 *backup*
 
 # Shell scripts in the repository root only (personal run wrappers).

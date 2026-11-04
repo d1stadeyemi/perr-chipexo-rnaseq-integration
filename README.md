@@ -18,14 +18,14 @@ That separation is the whole point of the integration, and it is what the pipeli
 
 *Produced by the `figures` stage from `results/06_integration/`. Points are differentially expressed genes; those with a PerR peak assigned to their promoter are highlighted.*
 
-| | |
-|---|---|
-| Organism | *Streptococcus agalactiae*, serotypes Ia (A909) and V (CJB111) |
-| Assemblies | `GCF_000012705.1`, `GCF_015221735.2` |
-| Assay | ChIP-exo, paired-end, 8 samples |
-| Workflow engine | Snakemake 9, per-rule conda environments |
-| Input | one `.zip` from the sequencing core, plus an RNA-seq workbook |
-| Runtime | approximately 6 to 9 hours on 8 cores |
+|                 |                                                                  |
+| --------------- | ---------------------------------------------------------------- |
+| Organism        | *Streptococcus agalactiae*, serotypes Ia (A909) and V (CJB111) |
+| Assemblies      | `GCF_000012705.1`, `GCF_015221735.2`                         |
+| Assay           | ChIP-exo, paired-end, 8 samples                                  |
+| Workflow engine | Snakemake 9, per-rule conda environments                         |
+| Input           | one `.zip` from the sequencing core, plus an RNA-seq workbook  |
+| Runtime         | approximately 6 to 9 hours on 8 cores                            |
 
 Everything downstream of the archive is derived automatically. Sample identities, IP versus control assignment, replicate numbering, and the strain to genome mapping are all parsed from the file naming convention in the delivery manifest. There is no sample sheet to write.
 
@@ -46,7 +46,7 @@ perr-chipexo-rnaseq-integration/
 │       └── locks/               fully resolved package lists for exact rebuilds
 ├── profiles/
 │   └── isaac/                   SLURM profile, adapt for your cluster
-├── resources/                   reference genomes and motif databases (downloaded)
+├── resources/                   ereference genomes and motif databases (downloaded)
 ├── data/                        input archive and RNA-seq workbook (user supplied)
 ├── results/                     all outputs, numbered by stage
 ├── docs/                        supplementary documentation
@@ -83,13 +83,13 @@ These instructions assume no prior familiarity with the project. Following them 
 
 ### 1. Compute requirements
 
-| Resource | Minimum | Notes |
-|---|---|---|
-| CPU cores | 8 | the workflow parallelises across rules |
-| RAM | 64 GB | ChExMix requests a 48 GB Java heap |
-| Disk | 120 GB | inputs, intermediates, and outputs |
-| Operating system | Linux or macOS | tested on RHEL 8 |
-| Internet access | required for two rules only | see step 5 |
+| Resource         | Minimum                     | Notes                                  |
+| ---------------- | --------------------------- | -------------------------------------- |
+| CPU cores        | 8                           | the workflow parallelises across rules |
+| RAM              | 64 GB                       | ChExMix requests a 48 GB Java heap     |
+| Disk             | 120 GB                      | inputs, intermediates, and outputs     |
+| Operating system | Linux or macOS              | tested on RHEL 8                       |
+| Internet access  | required for two rules only | see step 5                             |
 
 A laptop with 64 GB of RAM will work. On an HPC cluster, request an interactive or batch allocation with the resources above.
 
@@ -254,10 +254,10 @@ snakemake --sdm conda --conda-frontend conda -c8 \
 
 Three modules compare the two serotypes and cannot run on one:
 
-| Module | Reason |
-|---|---|
-| `orthology` | reciprocal best hits between two proteomes |
-| `pileup` | measures signal at positions orthologous between strains |
+| Module         | Reason                                                       |
+| -------------- | ------------------------------------------------------------ |
+| `orthology`  | reciprocal best hits between two proteomes                   |
+| `pileup`     | measures signal at positions orthologous between strains     |
 | `downsample` | subsamples every replicate to a depth common to both strains |
 
 `downsample` deserves a note. It is a control for the cross-strain comparison, not a stage the single-strain results depend on. Running it with one strain would compute a different target depth and produce numbers that do not correspond to anything published, so it is omitted above rather than allowed to run and mislead.
@@ -300,25 +300,25 @@ done
 
 ## Pipeline
 
-| Stage | Module | Target | Primary tools |
-|---|---|---|---|
-| Extraction and sample discovery | `setup.smk` | `stage` | Python |
-| Alignment from FASTQ (optional) | `align.smk` | `align` | bwa, Picard, samtools |
-| Read and library quality control | `qc.smk` | `qc` | samtools, FastQC, ChIPexoQual, deepTools |
-| Aggregated QC report | `report.smk` | `report` | MultiQC |
-| Reference acquisition | `reference.smk` | `get_reference_all` | NCBI datasets CLI |
-| Peak calling | `peaks.smk` | `peaks` | ChExMix |
-| Depth-matched control | `downsample.smk` | `downsample` | samtools, ChExMix |
-| Motif discovery and scanning | `motif.smk` | `motif` | MEME-ChIP, STREME, TOMTOM, FIMO, bedtools |
-| Motif database comparison | `motifdb.smk` | `motifdb` | TOMTOM |
-| RNA-seq integration | `integration.smk` | `integration` | Python, pandas, openpyxl |
-| Figures | `figures.smk` | `figures` | R, ggplot2, patchwork |
-| Cross-serotype orthology | `orthology.smk` | `orthology` | BLAST+ |
-| Orthologous-position signal test | `pileup.smk` | `pileup` | MUMmer4, deepTools, pyBigWig |
-| Genome browser assets | `igv.smk` | `igv` | samtools, deepTools, UCSC tools |
-| Parameter sensitivity | `sensitivity.smk` | `sensitivity_cheap` | Python |
-| Cross-caller concordance | `concordance.smk` | `concordance` | Python |
-| Motif-less peak analysis | `motifless.smk` | `motifless` | MEME-ChIP, SEA, TOMTOM |
+| Stage                            | Module              | Target                | Primary tools                             |
+| -------------------------------- | ------------------- | --------------------- | ----------------------------------------- |
+| Extraction and sample discovery  | `setup.smk`       | `stage`             | Python                                    |
+| Alignment from FASTQ (optional)  | `align.smk`       | `align`             | bwa, Picard, samtools                     |
+| Read and library quality control | `qc.smk`          | `qc`                | samtools, FastQC, ChIPexoQual, deepTools  |
+| Aggregated QC report             | `report.smk`      | `report`            | MultiQC                                   |
+| Reference acquisition            | `reference.smk`   | `get_reference_all` | NCBI datasets CLI                         |
+| Peak calling                     | `peaks.smk`       | `peaks`             | ChExMix                                   |
+| Depth-matched control            | `downsample.smk`  | `downsample`        | samtools, ChExMix                         |
+| Motif discovery and scanning     | `motif.smk`       | `motif`             | MEME-ChIP, STREME, TOMTOM, FIMO, bedtools |
+| Motif database comparison        | `motifdb.smk`     | `motifdb`           | TOMTOM                                    |
+| RNA-seq integration              | `integration.smk` | `integration`       | Python, pandas, openpyxl                  |
+| Figures                          | `figures.smk`     | `figures`           | R, ggplot2, patchwork                     |
+| Cross-serotype orthology         | `orthology.smk`   | `orthology`         | BLAST+                                    |
+| Orthologous-position signal test | `pileup.smk`      | `pileup`            | MUMmer4, deepTools, pyBigWig              |
+| Genome browser assets            | `igv.smk`         | `igv`               | samtools, deepTools, UCSC tools           |
+| Parameter sensitivity            | `sensitivity.smk` | `sensitivity_cheap` | Python                                    |
+| Cross-caller concordance         | `concordance.smk` | `concordance`       | Python                                    |
+| Motif-less peak analysis         | `motifless.smk`   | `motifless`         | MEME-ChIP, SEA, TOMTOM                    |
 
 Stages 08 and 09 exist because the two serotypes were not sequenced to equal depth and were not prepared identically. Comparing them therefore requires establishing orthology first, then asking whether an apparent difference in binding reflects biology or detection sensitivity.
 
@@ -332,18 +332,18 @@ Stages 08 and 09 exist because the two serotypes were not sequenced to equal dep
 
 All parameters live in `config/config.yaml`, which is commented throughout with the rationale for each value. The most consequential settings:
 
-| Parameter | Value | Effect |
-|---|---|---|
-| `peaks.chexmix_mappability` | 0.98 | fraction of the genome uniquely alignable, used in the background model |
-| `peaks.chexmix_qvalue` | 0.05 | event significance threshold |
-| `peaks.chexmix_minfold` | 1.5 | minimum enrichment over the scaled control |
-| `motif.meme_maxw` | 30 | maximum motif width in de novo discovery |
-| `motif.fimo_thresh` | 1e-4 | p-value threshold for genome-wide motif scanning |
-| `integration.max_upstream` | 300 | promoter window for peak to gene assignment |
-| `integration.operon_max_gap` | 50 | same-strand gap treated as co-transcribed |
-| `integration.min_reps` | 2 | minimum replicate support for a peak to be assigned to a gene |
-| `integration.deg_padj` | 0.05 | differential expression significance |
-| `integration.deg_log2fc` | 0.585 | differential expression effect size, equivalent to 1.5 fold |
+| Parameter                      | Value | Effect                                                                  |
+| ------------------------------ | ----- | ----------------------------------------------------------------------- |
+| `peaks.chexmix_mappability`  | 0.98  | fraction of the genome uniquely alignable, used in the background model |
+| `peaks.chexmix_qvalue`       | 0.05  | event significance threshold                                            |
+| `peaks.chexmix_minfold`      | 1.5   | minimum enrichment over the scaled control                              |
+| `motif.meme_maxw`            | 30    | maximum motif width in de novo discovery                                |
+| `motif.fimo_thresh`          | 1e-4  | p-value threshold for genome-wide motif scanning                        |
+| `integration.max_upstream`   | 300   | promoter window for peak to gene assignment                             |
+| `integration.operon_max_gap` | 50    | same-strand gap treated as co-transcribed                               |
+| `integration.min_reps`       | 2     | minimum replicate support for a peak to be assigned to a gene           |
+| `integration.deg_padj`       | 0.05  | differential expression significance                                    |
+| `integration.deg_log2fc`     | 0.585 | differential expression effect size, equivalent to 1.5 fold             |
 
 The `sensitivity` module measures how much each of these matters. It runs the affected part of the pipeline across a grid of alternatives, writing to `results/11_sensitivity/` without ever modifying `config/config.yaml`, and reports which outputs are stable and which depend on the threshold.
 
@@ -375,24 +375,24 @@ Several stages required adaptation because the tools involved carry defaults cal
 
 Managed automatically by Snakemake through per-rule conda environments. No manual installation is required.
 
-| Tool | Version | Purpose |
-|---|---|---|
-| Snakemake | 9 | workflow engine |
-| samtools | 1.21 | BAM handling, subsampling, indexing |
-| FastQC | 0.12 | raw read quality |
-| MultiQC | 1.21 | aggregated QC reporting |
-| ChIPexoQual | 1.28 | ChIP-exo specific library metrics |
-| deepTools | 3.5 | coverage tracks, fingerprint, correlation |
-| ChExMix | 0.52 | ChIP-exo peak calling |
-| MEME Suite | 5.5.9 | MEME, STREME, TOMTOM, FIMO, SEA, iupac2meme |
-| bedtools | 2.31 | interval operations, sequence extraction |
-| BLAST+ | 2.15 | reciprocal best hit orthology |
-| MUMmer4 | 4.0 | whole-genome alignment for coordinate lifting |
-| NCBI datasets CLI | 16 | reference genome retrieval |
-| pyBigWig | 0.3 | coverage extraction |
-| GEM | 3.4 | independent peak caller, concordance check (installed manually, see below) |
-| R | 4.3 | figures, via ggplot2, patchwork, ggrepel |
-| Python | 3.12 | analysis scripts, via pandas and openpyxl |
+| Tool              | Version | Purpose                                                                    |
+| ----------------- | ------- | -------------------------------------------------------------------------- |
+| Snakemake         | 9       | workflow engine                                                            |
+| samtools          | 1.21    | BAM handling, subsampling, indexing                                        |
+| FastQC            | 0.12    | raw read quality                                                           |
+| MultiQC           | 1.21    | aggregated QC reporting                                                    |
+| ChIPexoQual       | 1.28    | ChIP-exo specific library metrics                                          |
+| deepTools         | 3.5     | coverage tracks, fingerprint, correlation                                  |
+| ChExMix           | 0.52    | ChIP-exo peak calling                                                      |
+| MEME Suite        | 5.5.9   | MEME, STREME, TOMTOM, FIMO, SEA, iupac2meme                                |
+| bedtools          | 2.31    | interval operations, sequence extraction                                   |
+| BLAST+            | 2.15    | reciprocal best hit orthology                                              |
+| MUMmer4           | 4.0     | whole-genome alignment for coordinate lifting                              |
+| NCBI datasets CLI | 16      | reference genome retrieval                                                 |
+| pyBigWig          | 0.3     | coverage extraction                                                        |
+| GEM               | 3.4     | independent peak caller, concordance check (installed manually, see below) |
+| R                 | 4.3     | figures, via ggplot2, patchwork, ggrepel                                   |
+| Python            | 3.12    | analysis scripts, via pandas and openpyxl                                  |
 
 Full version pinning is in `workflow/envs/*.yaml`; fully resolved lockfiles are in `workflow/envs/locks/`. Literature citations for each tool are in [`CITATIONS.md`](CITATIONS.md).
 
@@ -427,12 +427,12 @@ Constraints of the data and the workflow that affect interpretation. These are s
 
 These files are produced by the workflow and regenerate on every run, so they cannot drift from the results they describe.
 
-| File | Contents |
-|---|---|
-| `results/02_report/qc_scorecard.md` | one row per sample with advisory quality flags |
+| File                                             | Contents                                       |
+| ------------------------------------------------ | ---------------------------------------------- |
+| `results/02_report/qc_scorecard.md`            | one row per sample with advisory quality flags |
 | `results/11_sensitivity/SENSITIVITY_REPORT.md` | which reported numbers are threshold-dependent |
-| `results/13_motifless/MOTIFLESS_REPORT.md` | analysis of peaks lacking the discovered motif |
-| `results/10_igv/README.md` | how to open the genome browser sessions |
+| `results/13_motifless/MOTIFLESS_REPORT.md`     | analysis of peaks lacking the discovered motif |
+| `results/10_igv/README.md`                     | how to open the genome browser sessions        |
 
 `docs/QC_METRICS.md` is maintained by hand and explains what each quality metric measures and why the thresholds were chosen.
 

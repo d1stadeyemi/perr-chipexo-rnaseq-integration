@@ -96,36 +96,62 @@ for (i in seq_along(strains)) {
     theme_perr()
 
   ## ---- P2: volcano -----------------------------------------------------
+  ## DE thresholds are read from config.yaml so the dashed lines always match
+  ## the classification. Fallbacks are the lab's cut-offs.
+  icfg   <- snakemake@config[["integration"]]
+  FC_CUT <- as.numeric(if (!is.null(icfg$deg_log2fc)) icfg$deg_log2fc else 1.5)
+  P_CUT  <- as.numeric(if (!is.null(icfg$deg_padj))   icfg$deg_padj   else 0.01)
+
+  CLS <- c("Not bound", "PerR-bound\nnot DE", "PerR-bound\nand DE")
   v <- rna %>%
     filter(!is.na(log2FC), !is.na(padj)) %>%
     mutate(nlp   = -log10(pmax(padj, 1e-300)),
-           class = case_when(gene_id %in% direct$gene_id ~ "direct target",
-                             gene_id %in% bound          ~ "PerR-bound",
-                             TRUE                        ~ "not bound"),
-           class = factor(class, levels = c("not bound", "PerR-bound", "direct target")))
-  lab <- v %>% filter(class == "direct target") %>%
-    # The RNA-seq table now carries its own gene_name, so joining another one in
-    # would produce gene_name.x / gene_name.y and break the mutate below. Drop
-    # any existing copy on the left first: the regulon table's name is the
-    # authoritative one (GFF symbol, with the lab's annotation filling gaps).
+           class = case_when(gene_id %in% direct$gene_id ~ CLS[3],
+                             gene_id %in% bound          ~ CLS[2],
+                             TRUE                        ~ CLS[1]),
+           class = factor(class, levels = CLS))
+
+  ## Labels: manuscript names for key loci; otherwise the GFF symbol; old-style
+  ## tags from the lab sheet (e.g. SAK_0923) fall back to the RefSeq locus tag.
+  NAME_FIX <- c(SAK_RS04615 = "VIT1/CCC1", ID870_RS04410 = "VIT1/CCC1")
+  OLD_TAG  <- "^(SAK|ID870)_[0-9]+$"
+  lab <- v %>% filter(class == CLS[3]) %>%
     select(-any_of("gene_name")) %>%
     left_join(direct %>% select(gene_id, gene_name), by = "gene_id") %>%
-    mutate(lab = ifelse(!is.na(gene_name) & nzchar(gene_name), gene_name, gene_id))
+    mutate(lab = case_when(
+      gene_id %in% names(NAME_FIX)                     ~ unname(NAME_FIX[gene_id]),
+      !is.na(gene_name) & nzchar(gene_name) &
+        !grepl(OLD_TAG, gene_name)                     ~ gene_name,
+      TRUE                                             ~ gene_id))
 
   p2 <- ggplot(v, aes(log2FC, nlp, colour = class, size = class)) +
     geom_vline(xintercept = 0, colour = "#D8DEE3", linewidth = .4) +
-    geom_point(data = ~subset(., class == "not bound"), alpha = .5) +
-    geom_point(data = ~subset(., class != "not bound")) +
-    ggrepel::geom_text_repel(data = lab, aes(label = lab), size = 2.6,
-                             colour = RUST, max.overlaps = 30,
-                             segment.colour = "#D8DEE3", show.legend = FALSE) +
-    scale_colour_manual(values = c("not bound" = GREY, "PerR-bound" = TEAL,
-                                   "direct target" = RUST)) +
-    scale_size_manual(values = c("not bound" = .7, "PerR-bound" = 1.5,
-                                 "direct target" = 2.4), guide = "none") +
-    labs(title = "Expression landscape",
-         x = "RNA-seq log2 fold change", y = expression(-log[10]~adjusted~p)) +
-    theme_perr()
+    geom_vline(xintercept = c(-FC_CUT, FC_CUT), linetype = "dashed",
+               colour = "#8A96A3", linewidth = .5) +
+    geom_hline(yintercept = -log10(P_CUT), linetype = "dashed",
+               colour = "#8A96A3", linewidth = .5) +
+    geom_point(data = ~subset(., class == CLS[1]), alpha = .5) +
+    geom_point(data = ~subset(., class != CLS[1])) +
+    ggrepel::geom_text_repel(data = lab, aes(label = lab),
+                             size = 7,                       # GENE LABEL SIZE
+                             fontface = "bold", colour = RUST,
+                             max.overlaps = Inf, box.padding = 0.7,
+                             min.segment.length = 0,
+                             segment.colour = "#9AA5B1", show.legend = FALSE) +
+    scale_colour_manual(values = setNames(c(GREY, TEAL, RUST), CLS)) +
+    scale_size_manual(values = setNames(c(.9, 2, 3.2), CLS), guide = "none") +
+    guides(colour = guide_legend(override.aes = list(size = 4))) +
+    labs(x = expression(bold(log[2]~fold~change~(Delta*bolditalic(perR)/WT))),
+         y = expression(bold(-log[10]~adjusted~bolditalic(p)))) +
+    theme_perr(base = 19) +                                  # TICK NUMBERS
+    theme(axis.title  = element_text(size = 25, face = "bold"), # AXIS TITLES
+          axis.text   = element_text(size = 18, face = "bold"), # AXIS TICKS
+          legend.text = element_text(size = 19, face = "bold")) # LEGEND TEXT
+  ## standalone volcano, one per strain
+  ggsave(file.path(outdir, sprintf("%s_volcano.pdf", strain)), p2,
+         width = 7, height = 6.5)
+  ggsave(file.path(outdir, sprintf("%s_volcano.png", strain)), p2,
+         width = 7, height = 6.5, dpi = 600)
 
   fig1 <- (p1 | p2) +
     plot_annotation(title = paste0("PerR direct regulon - ", strain),
@@ -134,7 +160,7 @@ for (i in seq_along(strains)) {
   ggsave(file.path(outdir, sprintf("%s_fig1_composition_volcano.pdf", strain)),
          fig1, width = 12, height = 5.2)
   ggsave(file.path(outdir, sprintf("%s_fig1_composition_volcano.png", strain)),
-         fig1, width = 12, height = 5.2, dpi = 300)
+         fig1, width = 12, height = 5.2, dpi = 600)
 
   ## ---- P3: binding strength vs expression ------------------------------
   bd <- reg %>% filter(relationship != "none",
