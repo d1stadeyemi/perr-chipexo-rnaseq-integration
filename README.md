@@ -14,7 +14,7 @@ Two serotypes of *S. agalactiae* were profiled by ChIP-exo using a 6xHis-tagged 
 
 That separation is the whole point of the integration, and it is what the pipeline outputs make visible. Differential expression alone identifies several hundred responsive genes; adding binding data shows that only a small minority of them carry a PerR site at their promoter.
 
-![Direct versus indirect regulon in A909](results/07_figures/A909_fig1_composition_volcano.png)
+<!-- ![Direct versus indirect regulon in A909](results/07_figures/A909_fig1_composition_volcano.png) -->
 
 *Produced by the `figures` stage from `results/06_integration/`. Points are differentially expressed genes; those with a PerR peak assigned to their promoter are highlighted.*
 
@@ -322,7 +322,7 @@ done
 
 Stages 08 and 09 exist because the two serotypes were not sequenced to equal depth and were not prepared identically. Comparing them therefore requires establishing orthology first, then asking whether an apparent difference in binding reflects biology or detection sensitivity.
 
-![Cross-serotype conservation](results/07_figures/orthology_fig1_conservation.png)
+<!-- ![Cross-serotype conservation](results/07_figures/orthology_fig1_conservation.png) -->
 
 *Produced by the `figures` stage from `results/08_orthology/`. Conservation is reported on two independent axes, binding alone and binding combined with expression response, because collapsing them into one label conflates two different questions.*
 
